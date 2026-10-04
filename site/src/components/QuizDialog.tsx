@@ -6,6 +6,7 @@ interface Props {
   readonly item: RoadmapItem;
   readonly quizzes: QuizzesState;
   readonly onClose: () => void;
+  readonly onPerfect: () => void;
 }
 
 type Stage =
@@ -17,7 +18,7 @@ type Stage =
 
 const LETTERS = ["A", "B", "C", "D"];
 
-export function QuizDialog({ item, quizzes, onClose }: Props) {
+export function QuizDialog({ item, quizzes, onClose, onPerfect }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [stage, setStage] = useState<Stage>({ name: "loading" });
   const [answers, setAnswers] = useState<readonly (number | null)[]>([]);
@@ -45,6 +46,7 @@ export function QuizDialog({ item, quizzes, onClose }: Props) {
     setStage({ name: "submitting", quiz });
     const res = await quizzes.submit(quiz.id, answers as number[]);
     setStage(res.ok ? { name: "graded", result: res.value } : { name: "error", message: res.error });
+    if (res.ok && res.value.score === res.value.total) onPerfect();
   };
 
   const unanswered = answers.filter((a) => a === null).length;
@@ -56,7 +58,7 @@ export function QuizDialog({ item, quizzes, onClose }: Props) {
           <div className="ph-code">Quiz</div>
           <h2 id="quiz-title">{item.title}</h2>
         </div>
-        <button type="button" className="ghost" onClick={() => dialogRef.current?.close()}>Close</button>
+        <button type="button" className="btn btn-ghost" onClick={() => dialogRef.current?.close()}>Close</button>
       </header>
 
       {stage.name === "loading" && (
@@ -66,7 +68,7 @@ export function QuizDialog({ item, quizzes, onClose }: Props) {
       {stage.name === "error" && (
         <div className="quiz-status">
           <p className="form-error" role="alert">{stage.message}</p>
-          <button type="button" className="primary" onClick={() => void load()}>Try again</button>
+          <button type="button" className="btn btn-primary" onClick={() => void load()}>Try again</button>
         </div>
       )}
 
@@ -86,7 +88,7 @@ export function QuizDialog({ item, quizzes, onClose }: Props) {
           ))}
           <div className="quiz-foot">
             <span className="muted">{unanswered === 0 ? "All answered." : `${unanswered} left to answer.`}</span>
-            <button type="submit" className="primary" disabled={unanswered > 0 || stage.name === "submitting"}>
+            <button type="submit" className="btn btn-primary" disabled={unanswered > 0 || stage.name === "submitting"}>
               {stage.name === "submitting" ? "Checking…" : "Submit answers"}
             </button>
           </div>
@@ -97,7 +99,7 @@ export function QuizDialog({ item, quizzes, onClose }: Props) {
         <div className="quiz-body">
           <p className="quiz-score">
             <b>{stage.result.score}/{stage.result.total}</b>
-            {stage.result.score === stage.result.total ? " Perfect." : stage.result.score >= stage.result.total * 0.6 ? " Solid." : " Worth another look at the video."}
+            <span className="quiz-verdict">{stage.result.score === stage.result.total ? "Flawless! +10 XP bonus." : stage.result.score >= stage.result.total * 0.6 ? "Solid run." : "Worth another look at the video."}</span>
           </p>
           {stage.result.questions.map((q, qi) => {
             const picked = stage.result.answers[qi];
@@ -115,8 +117,8 @@ export function QuizDialog({ item, quizzes, onClose }: Props) {
             );
           })}
           <div className="quiz-foot">
-            <button type="button" className="ghost" onClick={() => void load()}>New quiz</button>
-            <button type="button" className="primary" onClick={() => dialogRef.current?.close()}>Done</button>
+            <button type="button" className="btn btn-ghost" onClick={() => void load()}>New quiz</button>
+            <button type="button" className="btn btn-primary" onClick={() => dialogRef.current?.close()}>Done</button>
           </div>
         </div>
       )}
