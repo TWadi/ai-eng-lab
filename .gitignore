@@ -34,3 +34,9 @@ models/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Website
+node_modules/
+site/dist/
+.env.local
+*.tsbuildinfo

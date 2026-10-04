@@ -20,4 +20,4 @@ Both of you merged a hello-world notebook in `00-setup/<username>/` through a re
 
 - Your work: `00-setup/<your-github-username>/`
 - Anything both of you reuse: `shared/` + a test in `tests/`
-- Tick items on the [roadmap page](https://claude.ai/artifact/8TcYRRiGVDvEgRSKtFrk5R) too
+- Tick items on the [lab website](https://twadi.github.io/ai-eng-lab/) too

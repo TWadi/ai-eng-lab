@@ -13,4 +13,4 @@
 - [ ] Code runs from a fresh `uv sync`
 - [ ] Notebook outputs cleared (unless the output is the point)
 - [ ] No keys, datasets or model weights committed
-- [ ] Ticked the item(s) on the roadmap page
+- [ ] Ticked the item(s) on the lab website

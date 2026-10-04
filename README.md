@@ -2,7 +2,7 @@
 
 Our shared workspace for learning AI engineering together: a 40-week track from Python foundations to shipping production LLM apps and agents.
 
-- **Roadmap and progress tracker:** https://claude.ai/artifact/8TcYRRiGVDvEgRSKtFrk5R
+- **Website and live progress:** https://twadi.github.io/ai-eng-lab/ (source in [site/](site/))
 - **Start:** Monday 12 October 2026
 - **Pace:** 8–10 focused hours per person per week
 
@@ -27,6 +27,8 @@ ai-eng-lab/
 │   ├── README.md            goal, checklist, ship criteria for the phase
 │   └── <github-username>/   each person's own notebooks and code
 ├── shared/                  code we both reuse (a real Python package)
+├── site/                    the public progress website (React + Supabase)
+├── supabase/                database schema for the website
 ├── tests/                   tests for shared/ — run in CI on every PR
 ├── .env.example             copy to .env, never commit .env
 └── pyproject.toml           dependencies, managed with uv
