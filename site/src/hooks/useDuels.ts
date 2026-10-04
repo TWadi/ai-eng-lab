@@ -1,34 +1,47 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../supabase";
 import type { Duel, DuelEntry } from "../duels";
-import { dbError, toGraded, type GradedQuiz, type OpenQuiz, type Outcome, type SubmitResult } from "./useQuizzes";
+import { dbError, toGraded, type GradedQuiz, type Outcome, type QuizQuestion, type SubmitResult } from "./useQuizzes";
 
-export interface DuelResult extends GradedQuiz {
+/** start_duel returns either a wait (before the shared start time) or the questions. */
+export type DuelStart =
+  | { readonly kind: "wait"; readonly startsAt: number; readonly serverOffset: number }
+  | { readonly kind: "play"; readonly startsAt: number; readonly endsAt: number; readonly serverOffset: number; readonly questions: readonly QuizQuestion[] };
+
+export interface DuelGraded extends GradedQuiz {
   readonly time_ms: number;
-  readonly status: "open" | "done";
-  readonly winner: string | null;
-  readonly opponent_score: number | null;
-  readonly opponent_time_ms: number | null;
 }
 
 export interface DuelsState {
+  /** True once the first list has loaded (so changes after it are real news). */
+  readonly loaded: boolean;
   readonly duels: readonly Duel[];
   readonly entries: readonly DuelEntry[];
   readonly create: (itemId: string, opponentId: string) => Promise<Outcome<string>>;
-  readonly start: (duelId: string) => Promise<Outcome<OpenQuiz>>;
-  readonly submit: (duelId: string, answers: readonly number[]) => Promise<Outcome<DuelResult>>;
+  readonly respond: (duelId: string, accept: boolean) => Promise<Outcome<null>>;
+  readonly cancel: (duelId: string) => Promise<Outcome<null>>;
+  readonly start: (duelId: string) => Promise<Outcome<DuelStart>>;
+  readonly submit: (duelId: string, answers: readonly number[]) => Promise<Outcome<DuelGraded>>;
+  readonly finish: (duelId: string) => Promise<void>;
 }
 
-const DUEL_COLUMNS = "id,item_id,challenger,opponent,status,winner,created_at,completed_at";
+const DUEL_COLUMNS = "id,item_id,challenger,opponent,status,winner,created_at,completed_at,starts_at";
 const ENTRY_COLUMNS = "duel_id,user_id,started_at,submitted_at,score,time_ms";
+const OFFLINE: Outcome<never> = { ok: false, error: "The site isn't connected to its database." };
 
 function upsert<T>(list: readonly T[], item: T, same: (a: T) => boolean): readonly T[] {
   return list.some(same) ? list.map((x) => (same(x) ? item : x)) : [item, ...list];
 }
 
+/** server time - local time, so countdowns agree across both players' computers. */
+function offsetFrom(serverNow: string): number {
+  return new Date(serverNow).getTime() - Date.now();
+}
+
 export function useDuels(): DuelsState {
   const [duels, setDuels] = useState<readonly Duel[]>([]);
   const [entries, setEntries] = useState<readonly DuelEntry[]>([]);
+  const [loaded, setLoaded] = useState(false);
 
   const reloadEntries = useCallback(async () => {
     if (!supabase) return;
@@ -42,13 +55,16 @@ export function useDuels(): DuelsState {
     if (!client) return;
     let active = true;
 
-    (async () => {
+    const reloadAll = async () => {
       const { data, error } = await client.from("duels").select(DUEL_COLUMNS).order("created_at", { ascending: false }).limit(500);
       if (!active) return;
       if (error) console.error("Failed to load duels", error);
       else setDuels((data ?? []) as Duel[]);
       await reloadEntries();
-    })();
+      if (active) setLoaded(true);
+    };
+    void reloadAll();
+    let subscribedBefore = false;
 
     const channel = client
       .channel("duel-changes")
@@ -64,7 +80,13 @@ export function useDuels(): DuelsState {
         const e = payload.new as DuelEntry;
         setEntries((cur) => upsert(cur, e, (x) => x.duel_id === e.duel_id && x.user_id === e.user_id));
       })
-      .subscribe();
+      .subscribe((status) => {
+        // After a reconnect, events may have been missed: reload everything.
+        if (status === "SUBSCRIBED") {
+          if (subscribedBefore) void reloadAll();
+          subscribedBefore = true;
+        }
+      });
 
     return () => {
       active = false;
@@ -72,44 +94,85 @@ export function useDuels(): DuelsState {
     };
   }, [reloadEntries]);
 
+  const refreshDuel = useCallback(async (duelId: string) => {
+    if (!supabase) return;
+    const { data, error } = await supabase.from("duels").select(DUEL_COLUMNS).eq("id", duelId).maybeSingle();
+    if (error) console.error("Failed to refresh duel", error);
+    else if (data) setDuels((cur) => upsert(cur, data as Duel, (x) => x.id === duelId));
+  }, []);
+
+  const call = useCallback(async <T,>(fn: string, args: Record<string, unknown>, fallback: string): Promise<Outcome<T>> => {
+    if (!supabase) return OFFLINE;
+    const { data, error } = await supabase.rpc(fn, args);
+    if (error) {
+      console.error(`${fn} failed`, error);
+      return { ok: false, error: dbError(error, fallback) };
+    }
+    return { ok: true, value: data as T };
+  }, []);
+
   const create = useCallback(async (itemId: string, opponentId: string): Promise<Outcome<string>> => {
-    if (!supabase) return { ok: false, error: "The site isn't connected to its database." };
-    const { data, error } = await supabase.rpc("create_duel", { p_item: itemId, p_opponent: opponentId });
-    if (error || !data) {
-      console.error("Failed to create duel", error);
-      return { ok: false, error: dbError(error, "Couldn't start the duel. Try again.") };
-    }
-    return { ok: true, value: String(data) };
-  }, []);
+    const res = await call<{ id: string }>("create_duel", { p_item: itemId, p_opponent: opponentId }, "Couldn't send the challenge. Try again.");
+    if (!res.ok) return res;
+    await refreshDuel(res.value.id);
+    return { ok: true, value: res.value.id };
+  }, [call, refreshDuel]);
 
-  const start = useCallback(async (duelId: string): Promise<Outcome<OpenQuiz>> => {
-    if (!supabase) return { ok: false, error: "The site isn't connected to its database." };
-    const { data, error } = await supabase.rpc("start_duel", { p_duel: duelId });
-    if (error || !data) {
-      console.error("Failed to open duel", error);
-      return { ok: false, error: dbError(error, "Couldn't open the duel. Try again.") };
-    }
-    return { ok: true, value: data as OpenQuiz };
-  }, []);
+  const respond = useCallback(async (duelId: string, accept: boolean): Promise<Outcome<null>> => {
+    const res = await call<unknown>("respond_duel", { p_duel: duelId, p_accept: accept }, "Couldn't answer the challenge. Try again.");
+    await refreshDuel(duelId);
+    return res.ok ? { ok: true, value: null } : res;
+  }, [call, refreshDuel]);
 
-  const submit = useCallback(async (duelId: string, answers: readonly number[]): Promise<Outcome<DuelResult>> => {
-    if (!supabase) return { ok: false, error: "The site isn't connected to its database." };
-    const { data, error } = await supabase.rpc("submit_duel", { p_duel: duelId, p_answers: answers });
-    if (error || !data) {
-      console.error("Failed to submit duel", error);
-      return { ok: false, error: dbError(error, "Couldn't submit your answers. Try again.") };
-    }
-    const r = data as SubmitResult & Omit<DuelResult, keyof GradedQuiz>;
-    void reloadEntries();
-    return {
-      ok: true,
-      value: {
-        ...toGraded(r),
-        time_ms: r.time_ms, status: r.status, winner: r.winner ?? null,
-        opponent_score: r.opponent_score ?? null, opponent_time_ms: r.opponent_time_ms ?? null,
-      },
-    };
-  }, [reloadEntries]);
+  const cancel = useCallback(async (duelId: string): Promise<Outcome<null>> => {
+    const res = await call<unknown>("cancel_duel", { p_duel: duelId }, "Couldn't cancel the challenge. Try again.");
+    await refreshDuel(duelId);
+    return res.ok ? { ok: true, value: null } : res;
+  }, [call, refreshDuel]);
 
-  return { duels, entries, create, start, submit };
+  const start = useCallback(async (duelId: string): Promise<Outcome<DuelStart>> => {
+    const res = await call<{ starts_at: string; ends_at?: string; server_now: string; questions?: QuizQuestion[]; over?: boolean }>(
+      "start_duel", { p_duel: duelId }, "Couldn't open the duel. Try again.",
+    );
+    if (!res.ok) return res;
+    const r = res.value;
+    if (r.over) {
+      await refreshDuel(duelId);
+      return { ok: false, error: "This duel is already over" };
+    }
+    const serverOffset = offsetFrom(r.server_now);
+    const startsAt = new Date(r.starts_at).getTime();
+    return r.questions && r.ends_at
+      ? { ok: true, value: { kind: "play", startsAt, endsAt: new Date(r.ends_at).getTime(), serverOffset, questions: r.questions } }
+      : { ok: true, value: { kind: "wait", startsAt, serverOffset } };
+  }, [call, refreshDuel]);
+
+  const submit = useCallback(async (duelId: string, answers: readonly number[]): Promise<Outcome<DuelGraded>> => {
+    const res = await call<(SubmitResult & { time_ms: number }) | { over: true }>(
+      "submit_duel", { p_duel: duelId, p_answers: answers }, "Couldn't submit your answers. Try again.",
+    );
+    await Promise.all([reloadEntries(), refreshDuel(duelId)]);
+    if (!res.ok) return res;
+    if ("over" in res.value) return { ok: false, error: "This duel is already over" };
+    return { ok: true, value: { ...toGraded(res.value), time_ms: res.value.time_ms } };
+  }, [call, reloadEntries, refreshDuel]);
+
+  const finish = useCallback(async (duelId: string) => {
+    await call<string>("finish_duel", { p_duel: duelId }, "");
+    await refreshDuel(duelId);
+  }, [call, refreshDuel]);
+
+  // Safety net for missed realtime events: re-read pending and live duels every few seconds.
+  const activeIds = duels.filter((d) => d.status === "pending" || d.status === "live").map((d) => d.id).join(",");
+  useEffect(() => {
+    if (!activeIds) return;
+    const ids = activeIds.split(",");
+    const t = window.setInterval(() => {
+      ids.forEach((id) => void refreshDuel(id));
+      void reloadEntries();
+    }, 4000);
+    return () => window.clearInterval(t);
+  }, [activeIds, refreshDuel, reloadEntries]);
+
+  return { loaded, duels, entries, create, respond, cancel, start, submit, finish };
 }

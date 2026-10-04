@@ -1,12 +1,16 @@
+export type DuelStatus = "pending" | "live" | "done" | "declined" | "cancelled" | "expired";
+
 export interface Duel {
   readonly id: string;
   readonly item_id: string;
   readonly challenger: string;
   readonly opponent: string;
-  readonly status: "open" | "done";
+  readonly status: DuelStatus;
   readonly winner: string | null;
   readonly created_at: string;
   readonly completed_at: string | null;
+  /** Shared start time once the challenge is accepted. */
+  readonly starts_at: string | null;
 }
 
 export interface DuelEntry {
@@ -19,11 +23,15 @@ export interface DuelEntry {
 }
 
 export const DUEL_XP = { win: 15, draw: 5 } as const;
+/** Must match the database (live_duels migration). */
+export const INVITE_TTL_MS = 5 * 60_000;
+export const DUEL_LIMIT_MS = 120_000;
+export const DUEL_GRACE_MS = 15_000;
 
-/** Open duels older than this are shown as expired and can no longer be played from the site. */
-export const DUEL_TTL_DAYS = 7;
-
-export type DuelState = "your-turn" | "waiting" | "won" | "lost" | "draw" | "expired" | "watching";
+export type DuelState =
+  | "invite-in" | "invite-out" | "live"
+  | "won" | "lost" | "draw"
+  | "declined" | "cancelled" | "expired" | "watching";
 
 export interface DuelView {
   readonly duel: Duel;
@@ -33,8 +41,8 @@ export interface DuelView {
   readonly theirs: DuelEntry | undefined;
 }
 
-export function isExpired(duel: Duel, now: Date): boolean {
-  return duel.status === "open" && now.getTime() - new Date(duel.created_at).getTime() > DUEL_TTL_DAYS * 86_400_000;
+export function inviteExpired(duel: Duel, now: Date): boolean {
+  return duel.status === "pending" && now.getTime() - new Date(duel.created_at).getTime() > INVITE_TTL_MS;
 }
 
 /** How a duel looks from one player's point of view (or a spectator's). */
@@ -45,16 +53,21 @@ export function viewDuel(duel: Duel, entries: readonly DuelEntry[], meId: string
   const mine = entries.find((e) => e.duel_id === duel.id && e.user_id === me);
   const theirs = entries.find((e) => e.duel_id === duel.id && e.user_id === rivalId);
 
-  let state: DuelState;
-  if (duel.status === "done") {
-    state = !isPlayer ? "watching" : duel.winner === null ? "draw" : duel.winner === me ? "won" : "lost";
-  } else if (isExpired(duel, now)) {
-    state = "expired";
-  } else if (!isPlayer) {
-    state = "watching";
-  } else {
-    state = mine?.submitted_at ? "waiting" : "your-turn";
-  }
+  const state: DuelState = (() => {
+    switch (duel.status) {
+      case "pending":
+        if (inviteExpired(duel, now)) return "expired";
+        if (!isPlayer) return "watching";
+        return me === duel.opponent ? "invite-in" : "invite-out";
+      case "live":
+        return isPlayer ? "live" : "watching";
+      case "done":
+        if (!isPlayer) return "watching";
+        return duel.winner === null ? "draw" : duel.winner === me ? "won" : "lost";
+      default:
+        return duel.status;
+    }
+  })();
   return { duel, state, rivalId, mine, theirs };
 }
 
@@ -81,4 +94,15 @@ export function duelXp(userId: string, duel: Duel): number {
 
 export function formatTime(ms: number | null | undefined): string {
   return ms === null || ms === undefined ? "—" : `${(ms / 1000).toFixed(1)}s`;
+}
+
+/** The duel needing my attention right now: live first, then an incoming invite, then one I sent. */
+export function activeDuel(duels: readonly Duel[], entries: readonly DuelEntry[], meId: string | null, now: Date): DuelView | undefined {
+  if (!meId) return undefined;
+  const views = duels
+    .filter((d) => d.challenger === meId || d.opponent === meId)
+    .map((d) => viewDuel(d, entries, meId, now));
+  return views.find((v) => v.state === "live")
+    ?? views.find((v) => v.state === "invite-in")
+    ?? views.find((v) => v.state === "invite-out");
 }
