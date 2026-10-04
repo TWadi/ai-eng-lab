@@ -20,5 +20,5 @@ Your phase 4 or 5 project deployed, with CI running evals and a cost/latency das
 ## Where things go
 
 - Your work: `06-production/<your-github-username>/`
-- Anything both of you reuse: `shared/` + a test in `tests/`
+- Anything more than one of you reuses: `shared/` + a test in `tests/`
 - Tick items on the [lab website](https://twadi.github.io/ai-eng-lab/) too

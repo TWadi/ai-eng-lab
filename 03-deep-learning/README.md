@@ -21,5 +21,5 @@ Your own small GPT trained end to end, plus a write-up explaining attention with
 ## Where things go
 
 - Your work: `03-deep-learning/<your-github-username>/`
-- Anything both of you reuse: `shared/` + a test in `tests/`
+- Anything more than one of you reuses: `shared/` + a test in `tests/`
 - Tick items on the [lab website](https://twadi.github.io/ai-eng-lab/) too
