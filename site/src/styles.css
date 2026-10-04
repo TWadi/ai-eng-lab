@@ -509,3 +509,96 @@ dialog.share { width: min(860px, calc(100vw - 24px)); }
 .caption-label { font: 600 12px var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
 .caption-box textarea { width: 100%; font: 14px/1.5 var(--font-body); color: var(--ink); background: var(--card-2); border: 2px solid var(--dots); border-radius: 12px; padding: 10px 12px; resize: vertical; }
 .share-ok { margin: 0; font-weight: 700; color: var(--mint); }
+
+/* Lab */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.lab-head { display: grid; gap: 4px; }
+.lab-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.lab-tabs a { font-weight: 700; color: var(--ink); text-decoration: none; padding: 8px 16px; border: var(--border); border-radius: 999px; background: var(--card); }
+.lab-tabs a[aria-current="page"] { background: var(--ink); color: var(--bg); }
+.challenge-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
+.challenge-list li { animation: pop-in 0.4s ease both; }
+.challenge-card {
+  display: grid; gap: 6px; height: 100%; padding: 16px 18px; border: var(--border); border-radius: 18px; background: var(--card);
+  color: var(--ink); text-decoration: none; box-shadow: var(--lift); transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.challenge-card:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--shadow); }
+.challenge-card.solved { background: var(--done-bg); }
+.challenge-card-title { font-family: var(--font-display); font-size: 21px; line-height: 1.15; }
+.challenge-solvers { display: flex; min-height: 22px; }
+.challenge-solvers .avatar + .avatar { margin-left: -6px; }
+.level { font: 600 11px var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; padding: 1px 8px; border-radius: 999px; border: 2px solid var(--edge); }
+.level-easy { background: var(--mint); color: #fff; }
+.level-medium { background: var(--sun); color: #17183a; }
+.level-hard { background: var(--tomato); color: #fff; }
+.solved-pill { font: 600 11px var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; background: var(--mint); color: #fff; border: 2px solid var(--edge); border-radius: 999px; padding: 0 8px; }
+
+.challenge { display: grid; gap: 14px; }
+.back-link { font-weight: 700; text-decoration: none; }
+.challenge-grid { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 20px; align-items: start; }
+.challenge-brief { display: grid; gap: 10px; }
+.challenge-title { font-size: clamp(28px, 4vw, 38px); line-height: 1.05; }
+.prose { display: grid; gap: 10px; font-size: 15.5px; }
+.prose p, .prose ul, .prose ol { margin: 0; }
+.prose ul, .prose ol { padding-left: 20px; display: grid; gap: 4px; }
+.prose code, .challenge pre { font: 13.5px var(--font-mono); background: var(--card-2); border-radius: 6px; padding: 1px 6px; }
+.solvers { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; border-top: 2px dashed var(--dots); padding-top: 10px; }
+.challenge-work { display: grid; gap: 12px; min-width: 0; }
+.code-editor { border: var(--border); border-radius: 14px; overflow: hidden; background: var(--card); }
+.code-editor .cm-editor { min-height: 300px; max-height: 60vh; font-size: 14px; }
+.code-editor .cm-editor.cm-focused { outline: none; }
+.code-editor .cm-scroller { font-family: var(--font-mono); }
+.run-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.results { border: var(--border); border-radius: 14px; padding: 12px 14px; background: var(--card-2); display: grid; gap: 8px; }
+.results.all-pass { background: var(--done-bg); }
+.results-head { margin: 0; font-size: 16px; }
+.test-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.test-list li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 2px 8px; font-size: 14px; }
+.test-mark { font-weight: 700; }
+.test-list li.ok .test-mark { color: var(--mint); }
+.test-list li.fail .test-mark { color: var(--tomato); }
+.test-msg { grid-column: 2; font: 13px var(--font-mono); color: var(--muted); overflow-wrap: anywhere; }
+.stdout pre, .visible-tests pre { display: block; padding: 10px 12px; margin: 6px 0 0; overflow-x: auto; white-space: pre; }
+.visible-tests summary, .stdout summary { cursor: pointer; font-weight: 700; font-size: 14px; }
+.visible-tests { display: grid; gap: 6px; }
+
+.banner.info { background: var(--card); color: var(--ink); font-weight: 400; margin: 0; }
+.playground { display: grid; gap: 22px; }
+.lab-textarea, .lab-input { width: 100%; font: 15px/1.5 var(--font-body); color: var(--ink); background: var(--card-2); border: 2.5px solid var(--dots); border-radius: 12px; padding: 10px 12px; }
+.lab-textarea { resize: vertical; margin-top: 10px; }
+.lab-textarea:focus, .lab-input:focus { border-color: var(--cobalt); outline: none; }
+.panel > .run-bar { margin-top: 12px; }
+.model-load { display: grid; gap: 6px; margin-top: 12px; font: 600 13px var(--font-mono); color: var(--muted); }
+.load-bar { height: 10px; border: 2px solid var(--edge); border-radius: 999px; overflow: hidden; background: var(--card-2); }
+.load-bar i { display: block; height: 100%; background: var(--mint); transition: width 0.2s ease; }
+.sim-results { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; margin-top: 16px; align-items: start; }
+.heatmap-wrap { overflow-x: auto; }
+.heatmap { border-collapse: separate; border-spacing: 3px; font: 600 12px var(--font-mono); }
+.heatmap caption { text-align: left; margin-bottom: 6px; font-family: var(--font-body); }
+.heatmap th { color: var(--muted); font-weight: 600; padding: 2px 4px; }
+.heatmap td { width: 44px; height: 34px; text-align: center; border-radius: 6px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.embed-map { width: 100%; height: auto; background: var(--card-2); border: 2px solid var(--dots); border-radius: 14px; }
+.map-dot { fill: var(--cobalt); stroke: var(--edge); stroke-width: 2.5; }
+.map-num { fill: #fff; font: 700 13px var(--font-mono); }
+.sentence-key { grid-column: 1 / -1; margin: 0; padding-left: 22px; display: grid; gap: 2px; font-size: 14px; }
+.rag-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px 18px; margin-top: 12px; }
+.rag-controls label { display: grid; gap: 4px; font: 600 12px var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.rag-controls b { color: var(--ink); }
+.rag-controls input[type="range"] { accent-color: var(--cobalt); width: 100%; }
+.rag-ask { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; margin-top: 14px; }
+.hits { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 10px; }
+.hits li { border: 2.5px solid var(--dots); border-radius: 14px; padding: 10px 12px; background: var(--card-2); }
+.hits li.top { border-color: var(--edge); background: var(--done-bg); }
+.hit-head { display: grid; grid-template-columns: auto auto minmax(60px, 1fr) auto auto; gap: 10px; align-items: center; }
+.hit-rank { font-family: var(--font-display); font-size: 18px; }
+.hit-chunk { font: 600 12px var(--font-mono); color: var(--muted); }
+.hit-bar { height: 10px; border: 2px solid var(--edge); border-radius: 999px; overflow: hidden; background: var(--card); }
+.hit-bar i { display: block; height: 100%; background: var(--cobalt); }
+.hit-score { font: 600 13px var(--font-mono); font-variant-numeric: tabular-nums; }
+.hit-text { margin: 6px 0 0; font-size: 14px; }
+
+@media (max-width: 860px) {
+  .challenge-grid, .sim-results { grid-template-columns: 1fr; }
+  .hit-head { grid-template-columns: auto auto minmax(40px, 1fr) auto; }
+  .hit-head .solved-pill { grid-column: 1 / -1; justify-self: start; }
+}

@@ -19,6 +19,7 @@ interface Props {
 export function eventXp(e: ActivityEvent): number {
   if (e.kind === "quiz") return quizXp(e.score, e.total);
   if (e.kind === "duel") return e.draw ? DUEL_XP.draw : DUEL_XP.win;
+  if (e.kind === "solve") return e.xp;
   const item = findRoadmapItem(e.itemId);
   return item ? itemXp(item) : 0;
 }
@@ -36,7 +37,9 @@ export function ActivityList({ events, data }: Props) {
             <Avatar member={who} size={32} color={data.colorOf(e.userId)} />
             <span className="feed-text">
               <PlayerLink member={who} />{" "}
-              {e.kind === "done" ? "finished" : e.kind === "quiz" ? (
+              {e.kind === "solve" ? (
+                <>solved the coding challenge <a href={href({ page: "lab", lab: e.challengeId })}>{e.title}</a></>
+              ) : e.kind === "done" ? "finished" : e.kind === "quiz" ? (
                 <>scored <span className={`score${perfect ? " perfect" : ""}`}>{e.score}/{e.total}</span> on</>
               ) : (
                 <>
@@ -44,7 +47,7 @@ export function ActivityList({ events, data }: Props) {
                   {e.score !== null && e.rivalScore !== null && <span className="score duel-score">{e.score}–{e.rivalScore}</span>} in a duel on
                 </>
               )}{" "}
-              <a href={href({ page: "roadmap", phase })}>{item?.title ?? e.itemId}</a>
+              {e.kind !== "solve" && <a href={href({ page: "roadmap", phase })}>{item?.title ?? e.itemId}</a>}
             </span>
             <span className="feed-side">
               <span className="xp-chip">+{eventXp(e)} XP</span>

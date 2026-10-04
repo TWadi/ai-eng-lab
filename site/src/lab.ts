@@ -4,6 +4,7 @@ import type { ProgressByUser } from "./progress";
 import type { RoadmapItem } from "./roadmap";
 import type { Profile } from "./supabase";
 import type { Duel, DuelEntry } from "./duels";
+import type { ChallengeSolve } from "./hooks/useSolves";
 
 /** Everything the pages need, computed once in App. */
 export interface LabData {
@@ -26,6 +27,9 @@ export interface LabData {
   readonly onDuel: ((item: RoadmapItem) => void) | null;
   /** Open a duel to play it. */
   readonly onPlayDuel: ((duelId: string) => void) | null;
+  readonly solves: readonly ChallengeSolve[];
+  /** Called when the signed-in member passes every test of a challenge. */
+  readonly onSolved: ((challengeId: string) => void) | null;
 }
 
 export const PLAYER_COLORS = ["var(--cobalt)", "var(--tomato)", "var(--mint)", "var(--sun)", "var(--pink)"] as const;

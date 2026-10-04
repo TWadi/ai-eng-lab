@@ -16,6 +16,7 @@ interface Props {
 const NAV: ReadonlyArray<{ page: Page; label: string }> = [
   { page: "dashboard", label: "Dashboard" },
   { page: "roadmap", label: "Roadmap" },
+  { page: "lab", label: "Lab" },
   { page: "activity", label: "Activity" },
 ];
 

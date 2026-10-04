@@ -23,7 +23,7 @@ export function DashboardPage({ data }: { readonly data: LabData }) {
   const { me, members, ranked, progress, now, loading } = data;
   const current = phaseForWeek(PHASES, weekNumber(START_DATE, now)) ?? PHASES[0];
   const quests = me?.is_member ? nextQuests(PHASES, current.id, progress[me.id] ?? {}) : [];
-  const feed = buildFeed(progress, data.quizResults, 6, data.duels, data.duelEntries);
+  const feed = buildFeed(progress, data.quizResults, 6, data.duels, data.duelEntries, data.solves);
 
   return (
     <div className="page dashboard">

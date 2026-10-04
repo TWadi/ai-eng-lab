@@ -1,0 +1,300 @@
+[
+ {
+  "id": "cosine-similarity",
+  "item": "rag-5",
+  "title": "Cosine similarity from scratch",
+  "level": "easy",
+  "xp": 20,
+  "prompt": "Write `cosine_similarity(a, b)` for two vectors given as lists of numbers.\n\ncosine(a, b) = dot(a, b) / (|a| x |b|)\n\nRules:\n- Raise `ValueError` if the vectors have different lengths.\n- Return `0.0` if either vector is all zeros (instead of dividing by zero).\n- No numpy: use plain Python and `math`.",
+  "starter": "import math\n\n\ndef cosine_similarity(a, b):\n    # 1. check the lengths match\n    # 2. compute the dot product and both lengths (norms)\n    # 3. handle zero vectors, then return dot / (norm_a * norm_b)\n    raise NotImplementedError\n",
+  "tests": [
+   {
+    "name": "Same direction is 1",
+    "code": "got = cosine_similarity([1, 2], [2, 4])\nassert abs(got - 1) < 1e-9, f'expected 1.0, got {got}'",
+    "hidden": false
+   },
+   {
+    "name": "Perpendicular is 0",
+    "code": "got = cosine_similarity([1, 0], [0, 3])\nassert abs(got) < 1e-9, f'expected 0.0, got {got}'",
+    "hidden": false
+   },
+   {
+    "name": "Opposite is -1",
+    "code": "got = cosine_similarity([1, 1], [-2, -2])\nassert abs(got + 1) < 1e-9, f'expected -1.0, got {got}'",
+    "hidden": false
+   },
+   {
+    "name": "A general case",
+    "code": "got = cosine_similarity([1, 2, 3], [4, 5, 6])\nassert abs(got - 0.9746318461970762) < 1e-9, f'expected about 0.97463, got {got}'",
+    "hidden": false
+   },
+   {
+    "name": "Zero vector gives 0.0",
+    "code": "got = cosine_similarity([0, 0], [1, 2])\nassert got == 0.0, f'expected 0.0, got {got}'",
+    "hidden": true
+   },
+   {
+    "name": "Length mismatch raises ValueError",
+    "code": "try:\n    cosine_similarity([1, 2], [1, 2, 3])\nexcept ValueError:\n    pass\nelse:\n    raise AssertionError('expected a ValueError for different lengths')",
+    "hidden": true
+   }
+  ]
+ },
+ {
+  "id": "chunk-overlap",
+  "item": "rag-3",
+  "title": "Chunk text with overlap",
+  "level": "easy",
+  "xp": 20,
+  "prompt": "Write `chunk_text(text, size, overlap)` that splits text into character chunks for an ingestion pipeline.\n\n- Each chunk has at most `size` characters.\n- Each new chunk starts `size - overlap` characters after the previous one, so neighbours share `overlap` characters.\n- Stop as soon as a chunk reaches the end of the text (the last chunk may be shorter).\n- Empty text gives `[]`.\n- Raise `ValueError` if `overlap >= size` or `size <= 0` (that would never move forward).\n\nExample: `chunk_text(\"abcdefghij\", 4, 1)` gives `[\"abcd\", \"defg\", \"ghij\"]`.",
+  "starter": "def chunk_text(text, size, overlap):\n    chunks = []\n    # Walk through the text, moving forward by (size - overlap) each time.\n    return chunks\n",
+  "tests": [
+   {
+    "name": "Example from the prompt",
+    "code": "got = chunk_text('abcdefghij', 4, 1)\nassert got == ['abcd', 'defg', 'ghij'], f'got {got}'",
+    "hidden": false
+   },
+   {
+    "name": "No overlap",
+    "code": "got = chunk_text('abcdefghij', 5, 0)\nassert got == ['abcde', 'fghij'], f'got {got}'",
+    "hidden": false
+   },
+   {
+    "name": "Text shorter than one chunk",
+    "code": "got = chunk_text('abc', 10, 2)\nassert got == ['abc'], f'got {got}'",
+    "hidden": false
+   },
+   {
+    "name": "Empty text",
+    "code": "got = chunk_text('', 4, 1)\nassert got == [], f'got {got}'",
+    "hidden": false
+   },
+   {
+    "name": "Overlap must be smaller than size",
+    "code": "try:\n    chunk_text('abcdef', 3, 3)\nexcept ValueError:\n    pass\nelse:\n    raise AssertionError('expected ValueError when overlap >= size')",
+    "hidden": true
+   },
+   {
+    "name": "Neighbours share exactly `overlap` characters",
+    "code": "text = 'The quick brown fox jumps over the lazy dog'\nchunks = chunk_text(text, 10, 3)\nassert all(len(c) <= 10 for c in chunks), 'a chunk is longer than size'\nassert all(a[-3:] == b[:3] for a, b in zip(chunks, chunks[1:])), 'neighbours should share 3 characters'\nassert chunks[-1].endswith('dog'), 'the last chunk should reach the end of the text'",
+    "hidden": true
+   }
+  ]
+ },
+ {
+  "id": "top-k",
+  "item": "rag-4",
+  "title": "Top-k retrieval",
+  "level": "medium",
+  "xp": 30,
+  "prompt": "Write `top_k(query, docs, k)`: the heart of a retriever.\n\n- `query` is a vector, `docs` is a list of vectors (same length as the query).\n- Score every doc by cosine similarity to the query.\n- Return the best `k` as a list of `(index, score)` tuples, highest score first.\n- Break ties by the lower index first.\n- If `k` is larger than the number of docs, return all of them.\n\nYou will need your own cosine similarity in this file too.",
+  "starter": "import math\n\n\ndef top_k(query, docs, k):\n    # score each doc, sort, keep the first k\n    return []\n",
+  "tests": [
+   {
+    "name": "Best match first",
+    "code": "got = top_k([1, 0], [[0, 1], [1, 0], [1, 1]], 2)\nassert [i for i, _ in got] == [1, 2], f'expected indices [1, 2], got {got}'",
+    "hidden": false
+   },
+   {
+    "name": "Scores are cosine similarities",
+    "code": "got = top_k([1, 0], [[0, 1], [1, 0], [1, 1]], 3)\nassert abs(got[1][1] - 0.7071067811865475) < 1e-9, f'expected about 0.7071 for [1, 1], got {got}'",
+    "hidden": false
+   },
+   {
+    "name": "k larger than the corpus returns everything",
+    "code": "got = top_k([1, 0], [[1, 0], [0, 1]], 10)\nassert len(got) == 2, f'expected 2 results, got {len(got)}'",
+    "hidden": false
+   },
+   {
+    "name": "Ties go to the lower index",
+    "code": "got = top_k([1, 0], [[2, 0], [5, 0], [0, 1]], 2)\nassert [i for i, _ in got] == [0, 1], f'expected [0, 1] for a tie, got {got}'",
+    "hidden": true
+   },
+   {
+    "name": "Results are (index, score) tuples",
+    "code": "got = top_k([0, 1], [[0, 1]], 1)\nassert isinstance(got[0], tuple) and len(got[0]) == 2, f'expected [(0, 1.0)], got {got}'",
+    "hidden": true
+   }
+  ]
+ },
+ {
+  "id": "precision-recall",
+  "item": "rag-14",
+  "title": "Precision and recall at k",
+  "level": "easy",
+  "xp": 20,
+  "prompt": "Measure a retriever. Write two functions:\n\n- `precision_at_k(retrieved, relevant, k)`: of the first `k` retrieved ids, the fraction that are relevant.\n  Always divide by `k`, even if fewer than `k` ids were retrieved.\n- `recall_at_k(retrieved, relevant, k)`: the fraction of all relevant ids found in the first `k` retrieved.\n  If there are no relevant ids at all, return `0.0`.\n\n`retrieved` is a ranked list of ids, `relevant` is a set (or list) of ids.",
+  "starter": "def precision_at_k(retrieved, relevant, k):\n    return 0.0\n\n\ndef recall_at_k(retrieved, relevant, k):\n    return 0.0\n",
+  "tests": [
+   {
+    "name": "Precision@3",
+    "code": "got = precision_at_k(['a', 'x', 'b', 'y'], {'a', 'b', 'c'}, 3)\nassert abs(got - 2/3) < 1e-9, f'expected 0.667, got {got}'",
+    "hidden": false
+   },
+   {
+    "name": "Recall@3",
+    "code": "got = recall_at_k(['a', 'x', 'b', 'y'], {'a', 'b', 'c'}, 3)\nassert abs(got - 2/3) < 1e-9, f'expected 0.667, got {got}'",
+    "hidden": false
+   },
+   {
+    "name": "Recall@1",
+    "code": "got = recall_at_k(['a', 'x', 'b'], {'a', 'b'}, 1)\nassert abs(got - 0.5) < 1e-9, f'expected 0.5, got {got}'",
+    "hidden": false
+   },
+   {
+    "name": "Precision divides by k even when fewer are retrieved",
+    "code": "got = precision_at_k(['a'], {'a'}, 4)\nassert abs(got - 0.25) < 1e-9, f'expected 0.25, got {got}'",
+    "hidden": true
+   },
+   {
+    "name": "No relevant ids means recall 0.0",
+    "code": "got = recall_at_k(['a', 'b'], set(), 2)\nassert got == 0.0, f'expected 0.0, got {got}'",
+    "hidden": true
+   }
+  ]
+ },
+ {
+  "id": "rrf",
+  "item": "rag-15",
+  "title": "Reciprocal rank fusion",
+  "level": "medium",
+  "xp": 30,
+  "prompt": "Combine several ranked lists into one with reciprocal rank fusion (RRF).\n\n`reciprocal_rank_fusion(rankings, k=60)`:\n- `rankings` is a list of ranked lists of doc ids (best first).\n- A doc's score is the sum over every list it appears in of `1 / (k + rank)`, where `rank` starts at 1.\n- Return a list of `(doc_id, score)` sorted by score, highest first; break ties alphabetically by doc id.\n\nExample: `[[\"a\", \"b\"], [\"b\", \"c\"]]` ranks `b` first, because it appears high in both lists.",
+  "starter": "def reciprocal_rank_fusion(rankings, k=60):\n    scores = {}\n    # add 1 / (k + rank) for every doc in every list\n    return []\n",
+  "tests": [
+   {
+    "name": "Docs in both lists rise to the top",
+    "code": "got = reciprocal_rank_fusion([['a', 'b'], ['b', 'c']])\nassert [d for d, _ in got] == ['b', 'a', 'c'], f'expected order b, a, c, got {got}'",
+    "hidden": false
+   },
+   {
+    "name": "Scores use 1 / (k + rank)",
+    "code": "got = dict(reciprocal_rank_fusion([['a', 'b'], ['b', 'c']]))\nassert abs(got['b'] - (1/62 + 1/61)) < 1e-12, f\"expected b = 1/62 + 1/61, got {got['b']}\"",
+    "hidden": false
+   },
+   {
+    "name": "k is configurable",
+    "code": "got = dict(reciprocal_rank_fusion([['a']], k=0))\nassert abs(got['a'] - 1.0) < 1e-12, f\"expected 1.0 with k=0, got {got['a']}\"",
+    "hidden": false
+   },
+   {
+    "name": "Ties are broken alphabetically",
+    "code": "got = reciprocal_rank_fusion([['b'], ['a']])\nassert [d for d, _ in got] == ['a', 'b'], f'expected a before b on a tie, got {got}'",
+    "hidden": true
+   },
+   {
+    "name": "Empty input",
+    "code": "got = reciprocal_rank_fusion([])\nassert got == [], f'expected [], got {got}'",
+    "hidden": true
+   }
+  ]
+ },
+ {
+  "id": "bm25",
+  "item": "rag-16",
+  "title": "BM25 keyword scoring",
+  "level": "hard",
+  "xp": 50,
+  "prompt": "Implement the BM25 score used by keyword search.\n\n`bm25_score(query_terms, doc_terms, corpus, k1=1.5, b=0.75)` where every argument is a list of lowercase tokens\n(and `corpus` is a list of such documents, including `doc_terms`).\n\nFor each *distinct* term t in the query:\n- N = number of docs in the corpus, df = number of docs containing t\n- idf(t) = ln((N - df + 0.5) / (df + 0.5) + 1)\n- tf = how many times t occurs in doc_terms\n- avgdl = average document length in the corpus, dl = len(doc_terms)\n- term score = idf(t) x tf x (k1 + 1) / (tf + k1 x (1 - b + b x dl / avgdl))\n\nReturn the sum of the term scores. Terms that never occur in the doc add 0.",
+  "starter": "import math\n\n\ndef bm25_score(query_terms, doc_terms, corpus, k1=1.5, b=0.75):\n    return 0.0\n",
+  "tests": [
+   {
+    "name": "A missing term scores 0",
+    "code": "corpus = [['cat', 'sat'], ['dog', 'ran']]\ngot = bm25_score(['bird'], corpus[0], corpus)\nassert got == 0.0, f'expected 0.0, got {got}'",
+    "hidden": false
+   },
+   {
+    "name": "Exact value for a small corpus",
+    "code": "corpus = [['the', 'cat', 'sat'], ['the', 'dog', 'ran'], ['a', 'cat', 'and', 'a', 'dog']]\ngot = bm25_score(['cat'], corpus[0], corpus)\nassert abs(got - 0.5118851407626823) < 1e-9, f'expected about 0.51189, got {got}'",
+    "hidden": false
+   },
+   {
+    "name": "Rare terms beat common ones",
+    "code": "corpus = [['the', 'rag', 'model'], ['the', 'cat'], ['the', 'dog'], ['the', 'end']]\nrare = bm25_score(['rag'], corpus[0], corpus)\ncommon = bm25_score(['the'], corpus[0], corpus)\nassert rare > common, f'rare term should score higher: rag={rare}, the={common}'",
+    "hidden": false
+   },
+   {
+    "name": "More occurrences score higher",
+    "code": "corpus = [['cat', 'cat', 'x'], ['cat', 'y', 'z'], ['q', 'r', 's']]\nmany = bm25_score(['cat'], corpus[0], corpus)\nfew = bm25_score(['cat'], corpus[1], corpus)\nassert many > few, f'tf=2 should beat tf=1: {many} vs {few}'",
+    "hidden": true
+   },
+   {
+    "name": "Repeated query terms count once",
+    "code": "corpus = [['cat', 'sat'], ['dog', 'ran']]\nonce = bm25_score(['cat'], corpus[0], corpus)\ntwice = bm25_score(['cat', 'cat'], corpus[0], corpus)\nassert abs(once - twice) < 1e-12, f'distinct terms only: {once} vs {twice}'",
+    "hidden": true
+   }
+  ]
+ },
+ {
+  "id": "mmr",
+  "item": "rag-13",
+  "title": "Maximal marginal relevance",
+  "level": "hard",
+  "xp": 50,
+  "prompt": "Pick results that are relevant *and* different from each other with MMR.\n\n`mmr(query, docs, k, lambda_mult=0.5)` returns a list of `k` doc indices:\n1. First pick the doc most similar to the query (cosine similarity).\n2. Then repeatedly pick the unpicked doc with the highest\n   `lambda_mult x sim(query, doc) - (1 - lambda_mult) x max(sim(doc, picked) for picked docs)`.\n3. Break ties by the lower index. Stop at `k` docs (or when none are left).\n\nWith `lambda_mult = 1` this is plain top-k; lower values favour diversity.",
+  "starter": "import math\n\n\ndef mmr(query, docs, k, lambda_mult=0.5):\n    selected = []\n    return selected\n",
+  "tests": [
+   {
+    "name": "Starts with the most relevant doc",
+    "code": "got = mmr([1, 0.2], [[1, 0], [0.99, 0.1], [0.7, 0.7]], 1)\nassert got == [1], f'expected [1] (closest to the query), got {got}'",
+    "hidden": false
+   },
+   {
+    "name": "Skips the near-duplicate",
+    "code": "got = mmr([1, 0.2], [[1, 0], [0.99, 0.1], [0.7, 0.7]], 2)\nassert got == [1, 2], f'expected [1, 2]: doc 0 is almost the same as doc 1, got {got}'",
+    "hidden": false
+   },
+   {
+    "name": "lambda_mult = 1 is plain relevance order",
+    "code": "got = mmr([1, 0.2], [[1, 0], [0.99, 0.1], [0.7, 0.7]], 3, lambda_mult=1.0)\nassert got == [1, 0, 2], f'expected [1, 0, 2], got {got}'",
+    "hidden": false
+   },
+   {
+    "name": "Stops when docs run out",
+    "code": "got = mmr([1, 0], [[1, 0], [0, 1]], 5)\nassert sorted(got) == [0, 1] and len(got) == 2, f'expected both docs once, got {got}'",
+    "hidden": true
+   }
+  ]
+ },
+ {
+  "id": "recursive-split",
+  "item": "rag-9",
+  "title": "Recursive text splitter",
+  "level": "hard",
+  "xp": 50,
+  "prompt": "Build a simple version of LangChain's recursive splitter.\n\n`recursive_split(text, chunk_size, separators=(\"\\n\\n\", \"\\n\", \" \", \"\"))` returns a list of pieces:\n1. Use the first separator in the list that appears in the text (the empty string `\"\"` always \"appears\").\n2. Split the text on it and drop empty pieces.\n3. Any piece longer than `chunk_size` is split again, recursively, with the *remaining* separators.\n4. The `\"\"` separator means: cut into slices of exactly `chunk_size` characters (the last may be shorter).\n\nPieces are not merged back together here, and separators are not kept.",
+  "starter": "def recursive_split(text, chunk_size, separators=(\"\\n\\n\", \"\\n\", \" \", \"\")):\n    return [text]\n",
+  "tests": [
+   {
+    "name": "Short text stays whole",
+    "code": "got = recursive_split('hello', 10)\nassert got == ['hello'], f'got {got}'",
+    "hidden": false
+   },
+   {
+    "name": "Paragraphs first",
+    "code": "got = recursive_split('one two\\n\\nthree four', 10)\nassert got == ['one two', 'three four'], f'got {got}'",
+    "hidden": false
+   },
+   {
+    "name": "Falls back to spaces for long paragraphs",
+    "code": "got = recursive_split('alpha beta gamma\\n\\nok', 10)\nassert got == ['alpha', 'beta', 'gamma', 'ok'], f'got {got}'",
+    "hidden": false
+   },
+   {
+    "name": "Character slices as the last resort",
+    "code": "got = recursive_split('abcdefghij', 4)\nassert got == ['abcd', 'efgh', 'ij'], f'got {got}'",
+    "hidden": false
+   },
+   {
+    "name": "Every piece fits",
+    "code": "text = 'Retrieval augmented generation\\ncombines search\\n\\nwith generation. Supercalifragilistic words get sliced.'\ngot = recursive_split(text, 12)\nassert got and all(0 < len(p) <= 12 for p in got), f'pieces must be 1..12 chars, got {got}'",
+    "hidden": true
+   },
+   {
+    "name": "Empty text",
+    "code": "got = recursive_split('', 5)\nassert got == [], f'got {got}'",
+    "hidden": true
+   }
+  ]
+ }
+]

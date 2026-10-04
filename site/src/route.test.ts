@@ -22,6 +22,13 @@ describe("parseRoute", () => {
     expect(href({ page: "player", player: "bravo421" })).toBe("#/player/bravo421");
   });
 
+  it("reads lab pages", () => {
+    expect(parseRoute("#/lab")).toEqual({ page: "lab" });
+    expect(parseRoute("#/lab/cosine-similarity")).toEqual({ page: "lab", lab: "cosine-similarity" });
+    expect(parseRoute("#/lab/playground")).toEqual({ page: "lab", lab: "playground" });
+    expect(href({ page: "lab", lab: "rrf" })).toBe("#/lab/rrf");
+  });
+
   it("keeps old phase links working", () => {
     expect(parseRoute("#rag")).toEqual({ page: "roadmap", phase: "rag" });
     expect(parseRoute("#p4")).toEqual({ page: "roadmap", phase: "p4" });

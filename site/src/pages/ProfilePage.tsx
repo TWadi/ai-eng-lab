@@ -39,7 +39,7 @@ export function ProfilePage({ data, username }: { readonly data: LabData; readon
   const quizzes = data.quizResults.filter((q) => q.user_id === member.id);
   const accuracy = quizzes.length ? Math.round((quizzes.reduce((s, q) => s + q.score / q.total, 0) / quizzes.length) * 100) : null;
   const record = duelRecord(member.id, data.duels);
-  const timeline = xpTimeline(member.id, data.progress, data.quizResults, data.duels);
+  const timeline = xpTimeline(member.id, data.progress, data.quizResults, data.duels, data.solves);
   const duels = data.duels
     .filter((d) => d.status === "done" && (d.challenger === member.id || d.opponent === member.id))
     .slice(0, 6)
@@ -83,6 +83,7 @@ export function ProfilePage({ data, username }: { readonly data: LabData; readon
         <div><dt>Quiz accuracy</dt><dd>{accuracy === null ? "—" : `${accuracy}%`}</dd></div>
         <div><dt>Perfect quizzes</dt><dd>{stats?.perfectQuizzes ?? 0}</dd></div>
         <div><dt>Duels W-L-D</dt><dd>{record.wins}-{record.losses}-{record.draws}</dd></div>
+        <div><dt>Challenges</dt><dd>{stats?.challengesSolved ?? 0}</dd></div>
       </dl>
 
       <section className="panel" aria-labelledby="chart-title">
