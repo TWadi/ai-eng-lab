@@ -17,7 +17,7 @@ const fmt = (d: Date) => d.toLocaleDateString(undefined, { day: "numeric", month
 
 export function PhaseCard({ phase, isCurrent, members, progress, me, onToggle }: Props) {
   const [from, to] = phase.weeks;
-  const range = from === to ? `wk ${from}` : `wk ${from}–${to}`;
+  const range = from < 1 ? "before week 1" : from === to ? `wk ${from}` : `wk ${from}–${to}`;
   const canEdit = Boolean(me?.is_member);
   const mine = me ? progress[me.id] ?? {} : {};
 
