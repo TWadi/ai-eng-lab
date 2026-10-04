@@ -22,4 +22,4 @@ A study-buddy RAG app with citations and an eval report showing how each change 
 
 - Your work: `04-llm-apps/<your-github-username>/`
 - Anything both of you reuse: `shared/` + a test in `tests/`
-- Tick items on the [roadmap page](https://claude.ai/artifact/8TcYRRiGVDvEgRSKtFrk5R) too
+- Tick items on the [lab website](https://twadi.github.io/ai-eng-lab/) too
