@@ -12,7 +12,7 @@ interface Props {
 }
 
 export function QuestRow({ item, data, compact = false, phaseLabel }: Props) {
-  const { me, progress, members, onToggle, onQuiz } = data;
+  const { me, progress, members, onToggle, onQuiz, onDuel } = data;
   const mine = me ? progress[me.id] ?? {} : {};
   const done = item.id in mine;
   const finishers = members.filter((m) => item.id in (progress[m.id] ?? {}));
@@ -51,6 +51,7 @@ export function QuestRow({ item, data, compact = false, phaseLabel }: Props) {
         {!compact && hasQuiz && (onQuiz || scored.length > 0) && (
           <div className="quest-quiz">
             {onQuiz && <button type="button" className="btn btn-quiz" onClick={() => onQuiz(item)}>Quiz me</button>}
+            {onDuel && members.length > 1 && <button type="button" className="btn btn-duel" onClick={() => onDuel(item)}>Duel</button>}
             {scored.map((m) => {
               const s = best[m.id];
               return (

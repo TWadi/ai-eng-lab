@@ -16,8 +16,8 @@ function dayLabel(iso: string, now: Date): string {
 
 export function ActivityPage({ data }: { readonly data: LabData }) {
   const [who, setWho] = useState<string | null>(null);
-  const all = buildFeed(data.progress, data.quizResults, 500);
-  const events = who ? all.filter((e) => e.userId === who) : all;
+  const all = buildFeed(data.progress, data.quizResults, 500, data.duels, data.duelEntries);
+  const events = who ? all.filter((e) => e.userId === who || (e.kind === "duel" && e.rivalId === who)) : all;
   const days = events.reduce<Array<{ label: string; items: typeof events[number][] }>>((acc, e) => {
     const label = dayLabel(e.at, data.now);
     const last = acc[acc.length - 1];

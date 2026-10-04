@@ -1,8 +1,15 @@
 import { findRoadmapItem, relativeTime, type ActivityEvent } from "../activity";
 import { itemXp, quizXp } from "../gamify";
+import { DUEL_XP } from "../duels";
 import type { LabData } from "../lab";
 import { href } from "../route";
 import { Avatar } from "./Avatar";
+import type { Profile } from "../supabase";
+
+export function PlayerLink({ member }: { readonly member: Profile | undefined }) {
+  if (!member) return <b>Someone</b>;
+  return <a className="player-link" href={href({ page: "player", player: member.github_username })}>{member.display_name || member.github_username}</a>;
+}
 
 interface Props {
   readonly events: readonly ActivityEvent[];
@@ -11,6 +18,7 @@ interface Props {
 
 export function eventXp(e: ActivityEvent): number {
   if (e.kind === "quiz") return quizXp(e.score, e.total);
+  if (e.kind === "duel") return e.draw ? DUEL_XP.draw : DUEL_XP.win;
   const item = findRoadmapItem(e.itemId);
   return item ? itemXp(item) : 0;
 }
@@ -27,8 +35,15 @@ export function ActivityList({ events, data }: Props) {
           <li key={`${e.kind}-${e.userId}-${e.itemId}-${e.at}`} className={`feed-row ${e.kind}`} style={{ animationDelay: `${Math.min(i, 12) * 35}ms` }}>
             <Avatar member={who} size={32} color={data.colorOf(e.userId)} />
             <span className="feed-text">
-              <b>{who?.display_name || who?.github_username || "Someone"}</b>{" "}
-              {e.kind === "done" ? "finished" : <>scored <span className={`score${perfect ? " perfect" : ""}`}>{e.score}/{e.total}</span> on</>}{" "}
+              <PlayerLink member={who} />{" "}
+              {e.kind === "done" ? "finished" : e.kind === "quiz" ? (
+                <>scored <span className={`score${perfect ? " perfect" : ""}`}>{e.score}/{e.total}</span> on</>
+              ) : (
+                <>
+                  {e.draw ? "drew with" : "beat"} <PlayerLink member={data.memberById(e.rivalId)} />{" "}
+                  {e.score !== null && e.rivalScore !== null && <span className="score duel-score">{e.score}–{e.rivalScore}</span>} in a duel on
+                </>
+              )}{" "}
               <a href={href({ page: "roadmap", phase })}>{item?.title ?? e.itemId}</a>
             </span>
             <span className="feed-side">

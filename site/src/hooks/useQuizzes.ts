@@ -16,6 +16,8 @@ export interface GradedQuestion extends QuizQuestion {
 export interface OpenQuiz {
   readonly id: string;
   readonly questions: readonly QuizQuestion[];
+  /** When the clock started (duels). */
+  readonly started_at?: string;
 }
 
 export interface GradedQuiz {
@@ -25,8 +27,8 @@ export interface GradedQuiz {
   readonly answers: readonly number[];
 }
 
-/** What the submit_quiz database function returns. */
-interface SubmitResult {
+/** What submit_quiz / submit_duel return (the answer key arrives only after submitting). */
+export interface SubmitResult {
   readonly score: number;
   readonly total: number;
   readonly questions: readonly QuizQuestion[];
@@ -59,6 +61,20 @@ function toResult(row: Record<string, unknown>): QuizResult | null {
 function quizError(err: { message?: string; code?: string } | null): string {
   if (err?.code === "P0001" && err.message) return err.message;
   return "Couldn't start a quiz right now. Check your connection and try again.";
+}
+
+export function toGraded(r: SubmitResult): GradedQuiz {
+  return {
+    score: r.score,
+    total: r.total,
+    answers: r.answers,
+    questions: r.questions.map((q, i) => ({ ...q, answer_index: r.answer_indexes[i], explanation: r.explanations[i] ?? "" })),
+  };
+}
+
+/** Database exceptions raised on purpose carry a readable message; anything else gets a generic one. */
+export function dbError(err: { message?: string; code?: string } | null, fallback: string): string {
+  return err?.code === "P0001" && err.message ? err.message : fallback;
 }
 
 export function useQuizzes(): QuizzesState {
@@ -124,18 +140,7 @@ export function useQuizzes(): QuizzesState {
       console.error("Failed to submit quiz", error);
       return { ok: false, error: "Couldn't submit your answers. Try again." };
     }
-    const graded = data as SubmitResult;
-    return {
-      ok: true,
-      value: {
-        score: graded.score,
-        total: graded.total,
-        answers: graded.answers,
-        questions: graded.questions.map((q, i) => ({
-          ...q, answer_index: graded.answer_indexes[i], explanation: graded.explanations[i] ?? "",
-        })),
-      },
-    };
+    return { ok: true, value: toGraded(data as SubmitResult) };
   }, []);
 
   return { results, available, start, submit };

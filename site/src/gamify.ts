@@ -1,6 +1,7 @@
 import { bestScores, weekStartOf, weekStats, type QuizResult } from "./activity";
 import type { ProgressByUser } from "./progress";
 import { PHASES, type Phase, type RoadmapItem } from "./roadmap";
+import { duelRecord, duelXp, type Duel } from "./duels";
 
 /** How much XP each action is worth. Build items are worth more because they take longer. */
 export const XP = {
@@ -27,7 +28,7 @@ export const LEVEL_TITLES = [
 
 export type BadgeId =
   | "first-step" | "hat-trick" | "week-warrior" | "on-fire" | "quiz-whiz"
-  | "perfectionist" | "builder" | "phase-finisher" | "rag-master";
+  | "perfectionist" | "builder" | "phase-finisher" | "rag-master" | "duelist";
 
 export interface BadgeDef {
   readonly id: BadgeId;
@@ -45,6 +46,7 @@ export const BADGES: readonly BadgeDef[] = [
   { id: "builder", name: "Builder", description: "Finish 3 build items" },
   { id: "phase-finisher", name: "Phase Finisher", description: "Complete a whole phase" },
   { id: "rag-master", name: "RAG Master", description: "Finish every RAG video" },
+  { id: "duelist", name: "Duelist", description: "Win a quiz duel" },
 ];
 
 export interface LevelInfo {
@@ -90,6 +92,7 @@ export interface PlayerStats {
   readonly streak: number;
   readonly thisWeek: number;
   readonly badges: ReadonlySet<BadgeId>;
+  readonly duelWins: number;
 }
 
 export function playerStats(
@@ -97,6 +100,7 @@ export function playerStats(
   progress: ProgressByUser,
   quizzes: readonly QuizResult[],
   now: Date,
+  duels: readonly Duel[] = [],
 ): PlayerStats {
   const done = progress[userId] ?? {};
   const doneItems = Object.keys(done).map((id) => ITEMS.get(id)).filter((i): i is RoadmapItem => Boolean(i));
@@ -119,7 +123,12 @@ export function playerStats(
   const perfectQuizzes = bestPerItem.filter((q) => q.score === q.total).length;
 
   const phasesComplete = PHASES.filter((p) => phaseDone(p, done)).map((p) => p.id);
-  const xp = itemPoints + quizPoints + phasesComplete.length * XP.phaseComplete;
+  const duelPoints = duels.reduce((sum, d) => sum + duelXp(userId, d), 0);
+  const duelWeekPoints = duels
+    .filter((d) => d.completed_at && new Date(d.completed_at).getTime() >= weekStart)
+    .reduce((sum, d) => sum + duelXp(userId, d), 0);
+  const { wins: duelWins } = duelRecord(userId, duels);
+  const xp = itemPoints + quizPoints + duelPoints + phasesComplete.length * XP.phaseComplete;
   const { streak, thisWeek } = weekStats(Object.values(done), now);
 
   const perDay = Object.values(done).reduce<Record<string, number>>((acc, iso) => {
@@ -137,11 +146,12 @@ export function playerStats(
     doneItems.filter((i) => i.kind === "build").length >= 3 && "builder",
     phasesComplete.length >= 1 && "phase-finisher",
     phasesComplete.includes("rag") && "rag-master",
+    duelWins >= 1 && "duelist",
   ].filter((b): b is BadgeId => Boolean(b));
 
   return {
-    userId, xp, weekXp: itemWeekPoints + quizWeekPoints, level: levelForXp(xp),
-    itemsDone: doneItems.length, perfectQuizzes, phasesComplete, streak, thisWeek, badges: new Set(earned),
+    userId, xp, weekXp: itemWeekPoints + quizWeekPoints + duelWeekPoints, level: levelForXp(xp),
+    itemsDone: doneItems.length, perfectQuizzes, phasesComplete, streak, thisWeek, badges: new Set(earned), duelWins,
   };
 }
 
@@ -157,4 +167,63 @@ export function nextQuests(phases: readonly Phase[], fromPhaseId: string | undef
     .slice(start)
     .flatMap((p) => p.items.filter((i) => !(i.id in done)).map((item) => ({ phase: p, item })))
     .slice(0, limit);
+}
+
+export interface XpPoint {
+  /** Local date, YYYY-MM-DD. */
+  readonly day: string;
+  readonly xp: number;
+}
+
+function dayKey(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/**
+ * Cumulative XP at the end of each day the player earned something.
+ * Quizzes only add XP when they beat the player's previous best on that item; phase bonuses
+ * land on the day the phase's last item was finished. Ends at the same total as playerStats.
+ */
+export function xpTimeline(
+  userId: string,
+  progress: ProgressByUser,
+  quizzes: readonly QuizResult[],
+  duels: readonly Duel[] = [],
+): readonly XpPoint[] {
+  const done = progress[userId] ?? {};
+  const gains: Array<{ at: string; xp: number }> = [];
+
+  for (const [id, at] of Object.entries(done)) {
+    const item = ITEMS.get(id);
+    if (item) gains.push({ at, xp: itemXp(item) });
+  }
+  for (const phase of PHASES) {
+    if (!phaseDone(phase, done)) continue;
+    const last = phase.items.map((i) => done[i.id]).sort().at(-1);
+    if (last) gains.push({ at: last, xp: XP.phaseComplete });
+  }
+  const best = new Map<string, number>();
+  for (const q of [...quizzes].filter((q) => q.user_id === userId).sort((a, b) => a.completed_at.localeCompare(b.completed_at))) {
+    const prev = best.get(q.item_id) ?? 0;
+    const now = quizXp(q.score, q.total);
+    if (now > prev) {
+      gains.push({ at: q.completed_at, xp: now - prev });
+      best.set(q.item_id, now);
+    }
+  }
+  for (const d of duels) {
+    const xp = duelXp(userId, d);
+    if (xp > 0 && d.completed_at) gains.push({ at: d.completed_at, xp });
+  }
+
+  const perDay = gains.reduce<Record<string, number>>((acc, g) => {
+    const k = dayKey(g.at);
+    return { ...acc, [k]: (acc[k] ?? 0) + g.xp };
+  }, {});
+  let running = 0;
+  return Object.keys(perDay).sort().map((day) => {
+    running += perDay[day];
+    return { day, xp: running };
+  });
 }
