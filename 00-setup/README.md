@@ -14,10 +14,10 @@ Get the shared infrastructure running so the next 39 weeks are about learning, n
 
 ## Ship
 
-Both of you merged a hello-world notebook in `00-setup/<username>/` through a reviewed PR.
+Each of you merged a hello-world notebook in `00-setup/<username>/` through a reviewed PR.
 
 ## Where things go
 
 - Your work: `00-setup/<your-github-username>/`
-- Anything both of you reuse: `shared/` + a test in `tests/`
+- Anything more than one of you reuses: `shared/` + a test in `tests/`
 - Tick items on the [lab website](https://twadi.github.io/ai-eng-lab/) too

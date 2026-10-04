@@ -4,7 +4,7 @@ Public progress page at **https://twadi.github.io/ai-eng-lab/**.
 
 - **Frontend:** Vite + React + TypeScript in this folder, deployed to GitHub Pages by `.github/workflows/pages.yml` on every push to `main` that touches `site/`.
 - **Backend:** Supabase (Postgres + GitHub login). Schema and access rules are in `../supabase/migrations/`.
-- **Who can do what:** anyone can view progress. Only GitHub users listed in the `members` table (`TWadi`, `GhassenJamoussi99`) can tick items, and only their own.
+- **Who can do what:** anyone can view progress. Only GitHub users listed in the `members` table (`TWadi`, `GhassenJamoussi99`, `bravo421`) can tick items, and only their own.
 
 ## Develop locally
 

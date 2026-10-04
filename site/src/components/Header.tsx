@@ -12,7 +12,7 @@ export function Header({ auth, enabled }: Props) {
   return (
     <header className="top">
       <div className="brand">
-        <span className="eyebrow">Two people · 40 weeks · in public</span>
+        <span className="eyebrow">Three of us · 40 weeks · in public</span>
         <h1>AI Engineering Lab</h1>
         <p className="lede">
           We're learning AI engineering from Python foundations to production LLM apps and agents.

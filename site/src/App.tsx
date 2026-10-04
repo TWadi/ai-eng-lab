@@ -36,7 +36,7 @@ export function App() {
         <p className="banner">Progress tracking isn't connected yet. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY (see site/README.md).</p>
       )}
       {signedInNonMember && (
-        <p className="banner">You're signed in, but only the two lab members can tick items. You can still follow along here.</p>
+        <p className="banner">You're signed in, but only lab members can tick items and write notes. You can still follow along here.</p>
       )}
       {auth.error && <p className="banner error" role="alert">{auth.error}</p>}
       {error && <p className="banner error" role="alert">{error}</p>}
@@ -88,7 +88,7 @@ export function App() {
       )}
 
       <footer className="foot">
-        Built by TWadi and GhassenJamoussi99 · Hosted on GitHub Pages · Data in Supabase
+        Built by TWadi, GhassenJamoussi99 and bravo421 · Hosted on GitHub Pages · Data in Supabase
       </footer>
     </div>
   );

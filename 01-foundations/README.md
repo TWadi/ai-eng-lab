@@ -21,5 +21,5 @@ A tested Python CLI plus an analysis notebook with at least three charts and wri
 ## Where things go
 
 - Your work: `01-foundations/<your-github-username>/`
-- Anything both of you reuse: `shared/` + a test in `tests/`
+- Anything more than one of you reuses: `shared/` + a test in `tests/`
 - Tick items on the [lab website](https://twadi.github.io/ai-eng-lab/) too

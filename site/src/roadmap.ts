@@ -54,7 +54,7 @@ export const PHASES: readonly Phase[] = [
   {
     id: "p0", code: "phase_00", short: "00", title: "Lab setup", weeks: [1, 1],
     goal: "Get the shared infrastructure running so the next 39 weeks are about learning, not tooling.",
-    ship: "Repo is live and both of you have merged a hello-world notebook through a reviewed PR.",
+    ship: "Repo is live and each of you has merged a hello-world notebook through a reviewed PR.",
     items: [
       { id: "p0-1", kind: "build", title: "Clone ai-eng-lab, run uv sync and the env check script" },
       { id: "p0-2", kind: "setup", title: "Install Python 3.12, uv, VS Code + Jupyter, Git", url: "https://docs.astral.sh/uv/", source: "uv docs" },

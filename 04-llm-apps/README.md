@@ -22,5 +22,5 @@ A study-buddy RAG app with citations and an eval report showing how each change 
 ## Where things go
 
 - Your work: `04-llm-apps/<your-github-username>/`
-- Anything both of you reuse: `shared/` + a test in `tests/`
+- Anything more than one of you reuses: `shared/` + a test in `tests/`
 - Tick items on the [lab website](https://twadi.github.io/ai-eng-lab/) too

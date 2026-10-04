@@ -19,5 +19,5 @@ A public capstone repo, live demo, and write-up you can both point to in intervi
 ## Where things go
 
 - Your work: `07-capstone/<your-github-username>/`
-- Anything both of you reuse: `shared/` + a test in `tests/`
+- Anything more than one of you reuses: `shared/` + a test in `tests/`
 - Tick items on the [lab website](https://twadi.github.io/ai-eng-lab/) too
