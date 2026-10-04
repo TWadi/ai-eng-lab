@@ -1,10 +1,7 @@
 import { Header } from "./components/Header";
-import { NotesWorkspace } from "./components/notes/NotesWorkspace";
 import { PersonCard } from "./components/PersonCard";
 import { PhaseCard } from "./components/PhaseCard";
 import { useAuth } from "./hooks/useAuth";
-import { useHashTab } from "./hooks/useHashTab";
-import { usePages } from "./hooks/usePages";
 import { useProgress } from "./hooks/useProgress";
 import { phaseForWeek, weekNumber, weekStart } from "./progress";
 import { PHASES, START_DATE, TOTAL_WEEKS } from "./roadmap";
@@ -21,8 +18,6 @@ function weekLabel(week: number): string {
 export function App() {
   const auth = useAuth();
   const { members, progress, loading, error, toggle } = useProgress();
-  const pagesState = usePages();
-  const tab = useHashTab();
   const week = weekNumber(START_DATE, new Date());
   const current = phaseForWeek(PHASES, week);
   const me = auth.profile;
@@ -36,7 +31,7 @@ export function App() {
         <p className="banner">Progress tracking isn't connected yet. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY (see site/README.md).</p>
       )}
       {signedInNonMember && (
-        <p className="banner">You're signed in, but only lab members can tick items and write notes. You can still follow along here.</p>
+        <p className="banner">You're signed in, but only lab members can tick items. You can still follow along here.</p>
       )}
       {auth.error && <p className="banner error" role="alert">{auth.error}</p>}
       {error && <p className="banner error" role="alert">{error}</p>}
@@ -51,16 +46,6 @@ export function App() {
         )}
       </section>
 
-      <nav className="tabs" aria-label="Sections">
-        <a href="#roadmap" aria-current={tab === "roadmap" ? "page" : undefined}>Roadmap</a>
-        <a href="#notes" aria-current={tab === "notes" ? "page" : undefined}>
-          Notes{pagesState.pages.length > 0 && <span className="tab-count">{pagesState.pages.length}</span>}
-        </a>
-      </nav>
-
-      {tab === "notes" ? (
-        <NotesWorkspace pagesState={pagesState} members={members} me={me} />
-      ) : (
       <div className="layout">
         <nav className="rail" aria-label="Phases">
           <div className="today">{weekLabel(week)}</div>
@@ -85,7 +70,6 @@ export function App() {
           ))}
         </main>
       </div>
-      )}
 
       <footer className="foot">
         Built by TWadi, GhassenJamoussi99 and bravo421 · Hosted on GitHub Pages · Data in Supabase
