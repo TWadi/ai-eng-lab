@@ -1,33 +1,49 @@
 import { describe, expect, it } from "vitest";
-import { duelRecord, duelXp, formatTime, viewDuel, type Duel, type DuelEntry } from "./duels";
+import { activeDuel, duelRecord, duelXp, formatTime, viewDuel, type Duel } from "./duels";
 import { playerStats, xpTimeline } from "./gamify";
 
 const now = new Date("2026-10-14T12:00:00Z");
 const duel = (over: Partial<Duel>): Duel => ({
-  id: "d1", item_id: "rag-1", challenger: "a", opponent: "b", status: "open", winner: null,
-  created_at: "2026-10-13T12:00:00Z", completed_at: null, ...over,
-});
-const entry = (over: Partial<DuelEntry>): DuelEntry => ({
-  duel_id: "d1", user_id: "a", started_at: "2026-10-13T12:00:00Z", submitted_at: null, score: null, time_ms: null, ...over,
+  id: "d1", item_id: "rag-1", challenger: "a", opponent: "b", status: "pending", winner: null,
+  created_at: "2026-10-14T11:58:00Z", completed_at: null, starts_at: null, ...over,
 });
 
 describe("viewDuel", () => {
-  it("is my turn until I submit, then I wait", () => {
-    expect(viewDuel(duel({}), [], "b", now).state).toBe("your-turn");
-    const played = [entry({ user_id: "b", submitted_at: "2026-10-13T13:00:00Z", score: 4 })];
-    expect(viewDuel(duel({}), played, "b", now)).toMatchObject({ state: "waiting", rivalId: "a" });
+  it("shows a pending challenge as incoming or outgoing", () => {
+    expect(viewDuel(duel({}), [], "b", now).state).toBe("invite-in");
+    expect(viewDuel(duel({}), [], "a", now)).toMatchObject({ state: "invite-out", rivalId: "b" });
+    expect(viewDuel(duel({}), [], "c", now).state).toBe("watching");
   });
 
-  it("shows the result from each side", () => {
-    const d = duel({ status: "done", winner: "a", completed_at: "2026-10-13T14:00:00Z" });
+  it("expires invites after five minutes", () => {
+    expect(viewDuel(duel({ created_at: "2026-10-14T11:50:00Z" }), [], "b", now).state).toBe("expired");
+  });
+
+  it("is live for both players once accepted", () => {
+    const d = duel({ status: "live", starts_at: "2026-10-14T11:59:00Z" });
+    expect(viewDuel(d, [], "a", now).state).toBe("live");
+    expect(viewDuel(d, [], "b", now).state).toBe("live");
+  });
+
+  it("shows the result from each side, and closed states as-is", () => {
+    const d = duel({ status: "done", winner: "a", completed_at: "2026-10-14T11:59:30Z" });
     expect(viewDuel(d, [], "a", now).state).toBe("won");
     expect(viewDuel(d, [], "b", now).state).toBe("lost");
     expect(viewDuel(duel({ status: "done", winner: null }), [], "a", now).state).toBe("draw");
-    expect(viewDuel(d, [], "someone-else", now).state).toBe("watching");
+    expect(viewDuel(duel({ status: "declined" }), [], "a", now).state).toBe("declined");
+    expect(viewDuel(duel({ status: "cancelled" }), [], "b", now).state).toBe("cancelled");
   });
+});
 
-  it("expires open duels after a week", () => {
-    expect(viewDuel(duel({ created_at: "2026-10-01T12:00:00Z" }), [], "b", now).state).toBe("expired");
+describe("activeDuel", () => {
+  it("prefers live, then incoming, then outgoing", () => {
+    const out = duel({ id: "1", challenger: "me", opponent: "x" });
+    const inc = duel({ id: "2", challenger: "y", opponent: "me" });
+    const live = duel({ id: "3", challenger: "me", opponent: "z", status: "live" });
+    expect(activeDuel([out, inc, live], [], "me", now)?.duel.id).toBe("3");
+    expect(activeDuel([out, inc], [], "me", now)?.duel.id).toBe("2");
+    expect(activeDuel([out], [], "me", now)?.duel.id).toBe("1");
+    expect(activeDuel([out], [], null, now)).toBeUndefined();
   });
 });
 
@@ -36,7 +52,7 @@ describe("records and XP", () => {
     duel({ id: "1", status: "done", winner: "a", completed_at: "2026-10-13T14:00:00Z" }),
     duel({ id: "2", status: "done", winner: "b", completed_at: "2026-10-13T15:00:00Z" }),
     duel({ id: "3", status: "done", winner: null, completed_at: "2026-10-13T16:00:00Z" }),
-    duel({ id: "4" }),
+    duel({ id: "4", status: "declined" }),
   ];
 
   it("counts wins, losses and draws", () => {
