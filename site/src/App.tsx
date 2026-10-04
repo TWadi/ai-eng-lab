@@ -1,10 +1,10 @@
 import { Header } from "./components/Header";
-import { NotesView } from "./components/NotesView";
+import { NotesWorkspace } from "./components/notes/NotesWorkspace";
 import { PersonCard } from "./components/PersonCard";
 import { PhaseCard } from "./components/PhaseCard";
 import { useAuth } from "./hooks/useAuth";
 import { useHashTab } from "./hooks/useHashTab";
-import { useNotes } from "./hooks/useNotes";
+import { usePages } from "./hooks/usePages";
 import { useProgress } from "./hooks/useProgress";
 import { phaseForWeek, weekNumber, weekStart } from "./progress";
 import { PHASES, START_DATE, TOTAL_WEEKS } from "./roadmap";
@@ -21,7 +21,7 @@ function weekLabel(week: number): string {
 export function App() {
   const auth = useAuth();
   const { members, progress, loading, error, toggle } = useProgress();
-  const notesState = useNotes();
+  const pagesState = usePages();
   const tab = useHashTab();
   const week = weekNumber(START_DATE, new Date());
   const current = phaseForWeek(PHASES, week);
@@ -54,12 +54,12 @@ export function App() {
       <nav className="tabs" aria-label="Sections">
         <a href="#roadmap" aria-current={tab === "roadmap" ? "page" : undefined}>Roadmap</a>
         <a href="#notes" aria-current={tab === "notes" ? "page" : undefined}>
-          Notes{notesState.notes.length > 0 && <span className="tab-count">{notesState.notes.length}</span>}
+          Notes{pagesState.pages.length > 0 && <span className="tab-count">{pagesState.pages.length}</span>}
         </a>
       </nav>
 
       {tab === "notes" ? (
-        <NotesView notesState={notesState} members={members} me={me} />
+        <NotesWorkspace pagesState={pagesState} members={members} me={me} />
       ) : (
       <div className="layout">
         <nav className="rail" aria-label="Phases">
