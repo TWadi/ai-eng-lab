@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 export type Tab = "roadmap" | "notes";
 
 export function tabFromHash(hash: string): Tab {
-  return hash === "#notes" ? "notes" : "roadmap";
+  return hash === "#notes" || hash.startsWith("#notes/") ? "notes" : "roadmap";
 }
 
 /** The active tab lives in the URL hash so it survives refreshes and can be linked to. */
