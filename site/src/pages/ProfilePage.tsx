@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { findRoadmapItem, relativeTime } from "../activity";
 import { duelRecord, formatTime, viewDuel } from "../duels";
 import { BADGES, xpTimeline } from "../gamify";
@@ -9,6 +10,7 @@ import { Avatar } from "../components/Avatar";
 import { BadgeIcon } from "../components/BadgeIcon";
 import { PlayerLink } from "../components/ActivityList";
 import { XpChart } from "../components/XpChart";
+import { ShareDialog } from "../components/ShareDialog";
 
 const REPO = "https://github.com/TWadi/ai-eng-lab/tree/main";
 const PHASE_FOLDERS: Record<string, string> = {
@@ -17,6 +19,7 @@ const PHASE_FOLDERS: Record<string, string> = {
 };
 
 export function ProfilePage({ data, username }: { readonly data: LabData; readonly username: string }) {
+  const [sharing, setSharing] = useState(false);
   const member = data.members.find((m) => m.github_username.toLowerCase() === username.toLowerCase());
   if (!member) {
     return (
@@ -64,6 +67,11 @@ export function ProfilePage({ data, username }: { readonly data: LabData; readon
               </div>
               <div className="xp-bar"><i style={{ width: `${Math.round(stats.level.progress * 100)}%` }} /></div>
             </div>
+          )}
+          {stats && (
+            <button type="button" className="btn btn-primary share-btn" onClick={() => setSharing(true)}>
+              {isMe ? "Share my card" : `Make ${member.display_name || member.github_username}'s card`}
+            </button>
           )}
         </div>
       </section>
@@ -144,6 +152,15 @@ export function ProfilePage({ data, username }: { readonly data: LabData; readon
           </section>
         </div>
       </div>
+
+      {sharing && stats && (
+        <ShareDialog
+          input={{ name: member.display_name || member.github_username, handle: member.github_username, stats, record }}
+          avatarUrl={member.avatar_url}
+          color={color}
+          onClose={() => setSharing(false)}
+        />
+      )}
 
       <section className="panel" aria-labelledby="profile-badges-title">
         <div className="panel-head">

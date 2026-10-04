@@ -1,7 +1,7 @@
 import type { BadgeId } from "../gamify";
 
 /** Hand-drawn sticker glyphs for each badge; strokes use currentColor so badges recolor when locked. */
-const PATHS: Record<BadgeId, string> = {
+export const BADGE_PATHS: Record<BadgeId, string> = {
   "first-step": "M9 18c-2 0-3-1.6-3-3.5S7 10 9 10s3 2.6 3 4.5S11 18 9 18Zm7-4c-1.7 0-2.5-1.4-2.5-3S14.3 7 16 7s2.5 2.4 2.5 4-1 3-2.5 3ZM7 7.5a1 1 0 1 1 0-.01M10.5 6a1 1 0 1 1 0-.01M14 4a1 1 0 1 1 0-.01",
   "hat-trick": "M5 19h14M7 19l1.5-9h7L17 19M9 10c0-3 1.3-5 3-5s3 2 3 5M12 13v3",
   "week-warrior": "M12 3l2.5 5.2 5.5.8-4 3.9 1 5.6L12 15.8 7 18.5l1-5.6-4-3.9 5.5-.8Z",
@@ -17,7 +17,7 @@ const PATHS: Record<BadgeId, string> = {
 export function BadgeIcon({ id, size = 22 }: { readonly id: BadgeId; readonly size?: number }) {
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d={PATHS[id]} />
+      <path d={BADGE_PATHS[id]} />
     </svg>
   );
 }

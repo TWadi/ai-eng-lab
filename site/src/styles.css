@@ -495,3 +495,17 @@ dialog.arena { width: min(760px, calc(100vw - 24px)); }
   .versus { padding: 12px 14px; }
   .vs-name { font-size: 15px; }
 }
+
+/* Share cards */
+.share-btn { margin-top: 14px; }
+dialog.share { width: min(860px, calc(100vw - 24px)); }
+.quiz-head.share-head { background: var(--mint); color: #fff; }
+.card-preview { border: var(--border); border-radius: 16px; overflow: hidden; box-shadow: var(--lift-sm); background: var(--card-2); transition: opacity 0.2s ease; }
+.card-preview.drawing { opacity: 0.55; }
+.card-preview canvas { display: block; width: 100%; height: auto; aspect-ratio: 1200 / 627; }
+.share-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.caption-box { display: grid; gap: 6px; }
+.caption-box .panel-head { margin-bottom: 0; align-items: center; }
+.caption-label { font: 600 12px var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.caption-box textarea { width: 100%; font: 14px/1.5 var(--font-body); color: var(--ink); background: var(--card-2); border: 2px solid var(--dots); border-radius: 12px; padding: 10px 12px; resize: vertical; }
+.share-ok { margin: 0; font-weight: 700; color: var(--mint); }
