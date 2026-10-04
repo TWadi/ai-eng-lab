@@ -26,6 +26,16 @@ export interface GradedQuiz {
   readonly answers: readonly number[];
 }
 
+/** What the submit_quiz database function returns. */
+interface SubmitResult {
+  readonly score: number;
+  readonly total: number;
+  readonly questions: readonly QuizQuestion[];
+  readonly answers: readonly number[];
+  readonly answer_indexes: readonly number[];
+  readonly explanations: readonly string[];
+}
+
 export type Outcome<T> = { readonly ok: true; readonly value: T } | { readonly ok: false; readonly error: string };
 
 export interface QuizzesState {
@@ -103,17 +113,24 @@ export function useQuizzes(): QuizzesState {
 
   const submit = useCallback(async (quizId: string, answers: readonly number[]): Promise<Outcome<GradedQuiz>> => {
     if (!supabase) return { ok: false, error: "The site isn't connected to its database." };
-    const { error: updateError } = await supabase.from("quiz_attempts").update({ answers }).eq("id", quizId);
-    if (updateError) {
-      console.error("Failed to submit quiz", updateError);
+    // Graded in the database (submit_quiz): the answer key is never readable from the browser.
+    const { data, error } = await supabase.rpc("submit_quiz", { p_attempt: quizId, p_answers: answers });
+    if (error || !data) {
+      console.error("Failed to submit quiz", error);
       return { ok: false, error: "Couldn't submit your answers. Try again." };
     }
-    const { data, error } = await supabase.from("quiz_attempts").select("score,total,questions,answers").eq("id", quizId).single();
-    if (error || !data) {
-      console.error("Failed to load graded quiz", error);
-      return { ok: false, error: "Your answers were saved, but the results didn't load. Refresh to see your score." };
-    }
-    return { ok: true, value: data as unknown as GradedQuiz };
+    const graded = data as SubmitResult;
+    return {
+      ok: true,
+      value: {
+        score: graded.score,
+        total: graded.total,
+        answers: graded.answers,
+        questions: graded.questions.map((q, i) => ({
+          ...q, answer_index: graded.answer_indexes[i], explanation: graded.explanations[i] ?? "",
+        })),
+      },
+    };
   }, []);
 
   return { results, start, submit };

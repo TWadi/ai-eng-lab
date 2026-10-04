@@ -120,13 +120,6 @@ Deno.serve(async (req) => {
   const { data: profile } = await admin.from("profiles").select("is_member").eq("id", userId).maybeSingle();
   if (!profile?.is_member) return json({ error: "Only lab members can take quizzes." }, 403, origin);
 
-  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  const { count } = await admin.from("quiz_attempts").select("id", { count: "exact", head: true })
-    .eq("user_id", userId).gte("created_at", since);
-  if ((count ?? 0) >= DAILY_LIMIT) {
-    return json({ error: `You've reached ${DAILY_LIMIT} quizzes in 24 hours. Try again tomorrow.` }, 429, origin);
-  }
-
   let body: unknown;
   try {
     body = await req.json();
@@ -135,6 +128,28 @@ Deno.serve(async (req) => {
   }
   const parsed = parseRequest(body);
   if (typeof parsed === "string") return json({ error: parsed }, 400, origin);
+
+  // Record the attempt before calling Claude so failed and parallel requests still count toward the limit.
+  const { data: pending, error: pendingError } = await admin.from("quiz_attempts")
+    .insert({ user_id: userId, item_id: parsed.item_id, total: QUESTIONS, status: "pending" })
+    .select("id").single();
+  if (pendingError || !pending) {
+    console.error("Failed to record quiz attempt", pendingError);
+    return json({ error: "Couldn't start the quiz. Try again." }, 500, origin);
+  }
+  const attemptId: string = pending.id;
+  const fail = async (status: number, message: string) => {
+    await admin.from("quiz_attempts").update({ status: "failed" }).eq("id", attemptId);
+    return json({ error: message }, status, origin);
+  };
+
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { count } = await admin.from("quiz_attempts").select("id", { count: "exact", head: true })
+    .eq("user_id", userId).gte("created_at", since);
+  if ((count ?? 0) > DAILY_LIMIT) {
+    await admin.from("quiz_attempts").delete().eq("id", attemptId);
+    return json({ error: `You've reached ${DAILY_LIMIT} quizzes in 24 hours. Try again tomorrow.` }, 429, origin);
+  }
 
   const client = new Anthropic({ apiKey });
   let questions: Question[] | null = null;
@@ -149,39 +164,41 @@ Deno.serve(async (req) => {
     });
     if (response.stop_reason === "refusal") {
       console.error("Quiz request refused", response.stop_details);
-      return json({ error: "Claude declined to write this quiz. Try another item." }, 502, origin);
+      return await fail(502, "Claude declined to write this quiz. Try another item.");
     }
     if (response.stop_reason === "max_tokens") {
       console.error("Quiz output hit max_tokens");
-      return json({ error: "The quiz came back incomplete. Try again." }, 502, origin);
+      return await fail(502, "The quiz came back incomplete. Try again.");
     }
     const text = response.content.find((b) => b.type === "text");
     questions = text && text.type === "text" ? validQuestions(JSON.parse(text.text)) : null;
   } catch (err) {
     if (err instanceof Anthropic.RateLimitError) {
-      return json({ error: "Claude is busy right now. Try again in a minute." }, 429, origin);
+      return await fail(429, "Claude is busy right now. Try again in a minute.");
     }
     if (err instanceof Anthropic.APIError) {
       console.error("Anthropic API error", err.status, err.message);
-      return json({ error: "Couldn't reach Claude. Try again shortly." }, 502, origin);
+      return await fail(502, "Couldn't reach Claude. Try again shortly.");
     }
     console.error("Quiz generation failed", err);
-    return json({ error: "Something went wrong writing the quiz." }, 500, origin);
+    return await fail(500, "Something went wrong writing the quiz.");
   }
-  if (!questions) return json({ error: "The quiz came back malformed. Try again." }, 502, origin);
+  if (!questions) return await fail(502, "The quiz came back malformed. Try again.");
 
-  const { data: attempt, error: insertError } = await admin.from("quiz_attempts")
-    .insert({ user_id: userId, item_id: parsed.item_id, questions, total: questions.length })
-    .select("id").single();
-  if (insertError || !attempt) {
-    console.error("Failed to save quiz", insertError);
-    return json({ error: "Couldn't save the quiz. Try again." }, 500, origin);
+  // The answer key goes to quiz_keys, which no client can read; submit_quiz() grades against it.
+  const { error: keyError } = await admin.from("quiz_keys").insert({
+    attempt_id: attemptId,
+    answer_indexes: questions.map((q) => q.answer_index),
+    explanations: questions.map((q) => q.explanation),
+  });
+  const publicQuestions = questions.map(({ question, options }) => ({ question, options }));
+  const { error: readyError } = keyError
+    ? { error: keyError }
+    : await admin.from("quiz_attempts").update({ questions: publicQuestions, status: "ready" }).eq("id", attemptId);
+  if (keyError || readyError) {
+    console.error("Failed to save quiz", keyError ?? readyError);
+    return await fail(500, "Couldn't save the quiz. Try again.");
   }
 
-  // The response leaves out answers and explanations; the page fetches them after submitting.
-  // (They are in the member's own row, so a determined member could peek - fine among friends.)
-  return json({
-    id: attempt.id,
-    questions: questions.map(({ question, options }) => ({ question, options })),
-  }, 200, origin);
+  return json({ id: attemptId, questions: publicQuestions }, 200, origin);
 });
