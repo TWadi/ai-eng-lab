@@ -28,7 +28,7 @@ export function PersonCard({ member, done, isMe }: Props) {
         </div>
         <div className="person-pct">{pct}%</div>
       </div>
-      <div className="phase-strip" aria-label={`${n} of ${total} items done`}>
+      <div className="phase-strip" style={{ gridTemplateColumns: `repeat(${PHASES.length}, 1fr)` }} aria-label={`${n} of ${total} items done`}>
         {PHASES.map((p) => {
           const ids = p.items.map((i) => i.id);
           const d = countDone(done, ids);

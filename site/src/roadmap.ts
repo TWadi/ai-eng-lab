@@ -1,4 +1,4 @@
-// The 40-week roadmap. Item ids are stored in the database (progress.item_id),
+// The 40-week roadmap, plus a RAG course track before week 1. Item ids are stored in the database (progress.item_id),
 // so never rename an existing id; add new ones instead.
 
 export type ItemKind = "learn" | "build" | "setup";
@@ -14,6 +14,8 @@ export interface RoadmapItem {
 export interface Phase {
   readonly id: string;
   readonly code: string;
+  /** Short label for the phase rail and dropdowns. */
+  readonly short: string;
   readonly title: string;
   readonly weeks: readonly [number, number];
   readonly goal: string;
@@ -26,7 +28,31 @@ export const TOTAL_WEEKS = 40;
 
 export const PHASES: readonly Phase[] = [
   {
-    id: "p0", code: "phase_00", title: "Lab setup", weeks: [1, 1],
+    id: "rag", code: "rag_course", short: "RAG", title: "RAG course (Harish Neel)", weeks: [0, 0],
+    goal: "A hands-on tour of retrieval augmented generation before the main track starts. Watch together, tick each video, and post a note on anything unclear.",
+    ship: "A note for every video in your own words, plus the code from #3 and #6 running on your machine.",
+    items: [
+      { id: "rag-1", kind: "learn", title: "#1 Complete introduction to retrieval augmented generation", url: "https://www.youtube.com/watch?v=63B-3rqRFbQ&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube" },
+      { id: "rag-2", kind: "learn", title: "#2 Vector embeddings and RAG architecture explained", url: "https://www.youtube.com/watch?v=9iGvXxH_fdE&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube" },
+      { id: "rag-3", kind: "build", title: "#3 Build a data ingestion pipeline with Python", url: "https://www.youtube.com/watch?v=LK-OyelN9MU&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube" },
+      { id: "rag-4", kind: "learn", title: "#4 Document retrieval implementation with LangChain", url: "https://www.youtube.com/watch?v=brbd3AvsJWs&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube" },
+      { id: "rag-5", kind: "learn", title: "#5 Cosine similarity for vector search explained", url: "https://www.youtube.com/watch?v=nbJVJ1RPBEg&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube" },
+      { id: "rag-6", kind: "build", title: "#6 Build your first RAG application from scratch", url: "https://www.youtube.com/watch?v=i_v4Vm2KBuc&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube" },
+      { id: "rag-7", kind: "build", title: "#7 Conversational RAG with chat history", url: "https://www.youtube.com/watch?v=ZWXXpK4TIDY&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube" },
+      { id: "rag-8", kind: "learn", title: "#8 Text chunking strategies for better RAG performance", url: "https://www.youtube.com/watch?v=POE8LDjdAw4&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube" },
+      { id: "rag-9", kind: "learn", title: "#9 Advanced text splitting with LangChain", url: "https://www.youtube.com/watch?v=Ht8ImZT6kJ0&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube" },
+      { id: "rag-10", kind: "learn", title: "#10 Semantic chunking for improved RAG results", url: "https://www.youtube.com/watch?v=FPYtGK6HYRg&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube" },
+      { id: "rag-11", kind: "learn", title: "#11 AI agent-based document chunking", url: "https://www.youtube.com/watch?v=slG8qWvIPKg&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube" },
+      { id: "rag-12", kind: "learn", title: "#12 Multi-modal RAG with images and documents", url: "https://www.youtube.com/watch?v=dHgvDTXVvPA&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube" },
+      { id: "rag-13", kind: "learn", title: "#13 Advanced document retrieval techniques", url: "https://www.youtube.com/watch?v=kNU-J4NNNhk&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube" },
+      { id: "rag-14", kind: "learn", title: "#14 Multi-query RAG for better search results", url: "https://www.youtube.com/watch?v=ghwZVc9G0ac&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube" },
+      { id: "rag-15", kind: "learn", title: "#15 Reciprocal rank fusion for enhanced RAG performance", url: "https://www.youtube.com/watch?v=1qQCuWiRIfA&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube" },
+      { id: "rag-16", kind: "learn", title: "#16 Hybrid search: combining vector and keyword search", url: "https://www.youtube.com/watch?v=7WEtNxVh1vo&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube" },
+      { id: "rag-17", kind: "learn", title: "#17 RAG reranking and next steps", url: "https://www.youtube.com/watch?v=VWA15n6uiS4&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube" },
+    ],
+  },
+  {
+    id: "p0", code: "phase_00", short: "00", title: "Lab setup", weeks: [1, 1],
     goal: "Get the shared infrastructure running so the next 39 weeks are about learning, not tooling.",
     ship: "Repo is live and both of you have merged a hello-world notebook through a reviewed PR.",
     items: [
@@ -35,11 +61,10 @@ export const PHASES: readonly Phase[] = [
       { id: "p0-3", kind: "setup", title: "Create accounts: GitHub, Hugging Face, Kaggle, Google Colab, Anthropic Console (set a spend limit)" },
       { id: "p0-4", kind: "learn", title: "The Missing Semester: shell, editors, version control", url: "https://missing.csail.mit.edu", source: "MIT" },
       { id: "p0-5", kind: "setup", title: "Agree on the weekly rhythm and calendar the Thursday pair session" },
-      { id: "p0-6", kind: "learn", title: "Preview: watch the Complete RAG Tutorial 2026 playlist for the big picture", url: "https://www.youtube.com/playlist?list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "Harish Neel · YouTube" },
     ],
   },
   {
-    id: "p1", code: "phase_01", title: "Foundations: Python, data, math", weeks: [2, 5],
+    id: "p1", code: "phase_01", short: "01", title: "Foundations: Python, data, math", weeks: [2, 5],
     goal: "Write clean Python comfortably, wrangle data, and build the math intuition ML is made of.",
     ship: "A tested Python CLI plus an analysis notebook with at least three charts and written conclusions.",
     items: [
@@ -53,7 +78,7 @@ export const PHASES: readonly Phase[] = [
     ],
   },
   {
-    id: "p2", code: "phase_02", title: "Classical machine learning", weeks: [6, 10],
+    id: "p2", code: "phase_02", short: "02", title: "Classical machine learning", weeks: [6, 10],
     goal: "Understand how models learn, how to evaluate them honestly, and when simple models win.",
     ship: "Kaggle submission plus a report comparing models, with the leakage traps you avoided.",
     items: [
@@ -65,7 +90,7 @@ export const PHASES: readonly Phase[] = [
     ],
   },
   {
-    id: "p3", code: "phase_03", title: "Deep learning and transformers", weeks: [11, 17],
+    id: "p3", code: "phase_03", short: "03", title: "Deep learning and transformers", weeks: [11, 17],
     goal: "Build neural networks from scratch until a GPT is no longer magic.",
     ship: "Your own small GPT trained end to end, plus a write-up explaining attention.",
     items: [
@@ -79,7 +104,7 @@ export const PHASES: readonly Phase[] = [
     ],
   },
   {
-    id: "p4", code: "phase_04", title: "LLM application engineering", weeks: [18, 24],
+    id: "p4", code: "phase_04", short: "04", title: "LLM application engineering", weeks: [18, 24],
     goal: "Build reliable products on foundation models: prompting, structured output, RAG, evals.",
     ship: "A study-buddy RAG app with citations and an eval report showing how each change moved the score.",
     items: [
@@ -94,7 +119,7 @@ export const PHASES: readonly Phase[] = [
     ],
   },
   {
-    id: "p5", code: "phase_05", title: "Agents and MCP", weeks: [25, 29],
+    id: "p5", code: "phase_05", short: "05", title: "Agents and MCP", weeks: [25, 29],
     goal: "Give models tools and let them act, with loops you understand and can debug.",
     ship: "An agent that completes a multi-step task through your MCP server, with replayable traces.",
     items: [
@@ -107,7 +132,7 @@ export const PHASES: readonly Phase[] = [
     ],
   },
   {
-    id: "p6", code: "phase_06", title: "Production and LLMOps", weeks: [30, 34],
+    id: "p6", code: "phase_06", short: "06", title: "Production and LLMOps", weeks: [30, 34],
     goal: "Turn prototypes into services that are observable, affordable, and safe.",
     ship: "Your phase 4 or 5 project deployed, with CI running evals and a cost/latency dashboard.",
     items: [
@@ -120,7 +145,7 @@ export const PHASES: readonly Phase[] = [
     ],
   },
   {
-    id: "p7", code: "phase_07", title: "Capstone", weeks: [35, 40],
+    id: "p7", code: "phase_07", short: "07", title: "Capstone", weeks: [35, 40],
     goal: "Solve one real problem together and package it as the centrepiece of both portfolios.",
     ship: "A public capstone repo, live demo, and write-up you can both point to in interviews.",
     items: [

@@ -1,7 +1,10 @@
 import { Header } from "./components/Header";
+import { NotesView } from "./components/NotesView";
 import { PersonCard } from "./components/PersonCard";
 import { PhaseCard } from "./components/PhaseCard";
 import { useAuth } from "./hooks/useAuth";
+import { useHashTab } from "./hooks/useHashTab";
+import { useNotes } from "./hooks/useNotes";
 import { useProgress } from "./hooks/useProgress";
 import { phaseForWeek, weekNumber, weekStart } from "./progress";
 import { PHASES, START_DATE, TOTAL_WEEKS } from "./roadmap";
@@ -18,6 +21,8 @@ function weekLabel(week: number): string {
 export function App() {
   const auth = useAuth();
   const { members, progress, loading, error, toggle } = useProgress();
+  const notesState = useNotes();
+  const tab = useHashTab();
   const week = weekNumber(START_DATE, new Date());
   const current = phaseForWeek(PHASES, week);
   const me = auth.profile;
@@ -46,12 +51,22 @@ export function App() {
         )}
       </section>
 
+      <nav className="tabs" aria-label="Sections">
+        <a href="#roadmap" aria-current={tab === "roadmap" ? "page" : undefined}>Roadmap</a>
+        <a href="#notes" aria-current={tab === "notes" ? "page" : undefined}>
+          Notes{notesState.notes.length > 0 && <span className="tab-count">{notesState.notes.length}</span>}
+        </a>
+      </nav>
+
+      {tab === "notes" ? (
+        <NotesView notesState={notesState} members={members} me={me} />
+      ) : (
       <div className="layout">
         <nav className="rail" aria-label="Phases">
           <div className="today">{weekLabel(week)}</div>
           {PHASES.map((p) => (
             <a key={p.id} href={`#${p.id}`} className={current?.id === p.id ? "now" : ""}>
-              <span className="code">{p.code.slice(-2)}</span>
+              <span className="code">{p.short}</span>
               <span>{p.title.split(":")[0]}</span>
             </a>
           ))}
@@ -70,6 +85,7 @@ export function App() {
           ))}
         </main>
       </div>
+      )}
 
       <footer className="foot">
         Built by TWadi and GhassenJamoussi99 · Hosted on GitHub Pages · Data in Supabase

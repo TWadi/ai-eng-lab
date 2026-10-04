@@ -73,20 +73,25 @@ describe("weeks and phases", () => {
   });
 
   it("maps weeks to phases", () => {
-    expect(phaseForWeek(PHASES, 0)?.id).toBe("p0");
+    expect(phaseForWeek(PHASES, 0)?.id).toBe("rag");
     expect(phaseForWeek(PHASES, 1)?.id).toBe("p0");
     expect(phaseForWeek(PHASES, 11)?.id).toBe("p3");
     expect(phaseForWeek(PHASES, 40)?.id).toBe("p7");
     expect(phaseForWeek(PHASES, 41)).toBeUndefined();
   });
 
+  it("the RAG course comes first and has one item per video", () => {
+    expect(PHASES[0].id).toBe("rag");
+    expect(PHASES[0].items).toHaveLength(17);
+  });
+
   it("phases cover weeks 1-40 with no gaps or overlaps", () => {
-    const weeks = PHASES.flatMap((p) => Array.from({ length: p.weeks[1] - p.weeks[0] + 1 }, (_, i) => p.weeks[0] + i));
+    const weeks = PHASES.filter((p) => p.weeks[0] >= 1).flatMap((p) => Array.from({ length: p.weeks[1] - p.weeks[0] + 1 }, (_, i) => p.weeks[0] + i));
     expect(weeks).toEqual(Array.from({ length: 40 }, (_, i) => i + 1));
   });
 
   it("item ids are unique and match the database format", () => {
     expect(new Set(ALL_ITEM_IDS).size).toBe(ALL_ITEM_IDS.length);
-    ALL_ITEM_IDS.forEach((id) => expect(id).toMatch(/^p[0-9]-[0-9]{1,2}$/));
+    ALL_ITEM_IDS.forEach((id) => expect(id).toMatch(/^[a-z0-9]{1,8}-[0-9]{1,3}$/));
   });
 });

@@ -11,7 +11,6 @@ Get the shared infrastructure running so the next 39 weeks are about learning, n
 - [ ] Create accounts: GitHub, Hugging Face, Kaggle, Google Colab, Anthropic Console (set a spend limit)
 - [ ] [The Missing Semester](https://missing.csail.mit.edu): shell, editors, version control
 - [ ] Calendar the Thursday pair session
-- [ ] Preview: [Complete RAG Tutorial 2026](https://www.youtube.com/playlist?list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY) (Harish Neel) for the big picture — no need to code along yet
 
 ## Ship
 
