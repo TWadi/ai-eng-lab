@@ -4,11 +4,16 @@ import { phaseDone, playerStats, rankPlayers, type PlayerStats } from "./gamify"
 import { useAuth } from "./hooks/useAuth";
 import { useProgress } from "./hooks/useProgress";
 import { useQuizzes } from "./hooks/useQuizzes";
+import { useDuels, type DuelResult } from "./hooks/useDuels";
 import { PLAYER_COLORS, type LabData } from "./lab";
 import { PHASES, type RoadmapItem } from "./roadmap";
 import { useRoute } from "./route";
 import { supabase } from "./supabase";
 import { QuizDialog } from "./components/QuizDialog";
+import { ChallengeDialog } from "./components/ChallengeDialog";
+import { ProfilePage } from "./pages/ProfilePage";
+import { findRoadmapItem } from "./activity";
+import { formatTime } from "./duels";
 import { TopBar } from "./components/TopBar";
 import { ActivityPage } from "./pages/ActivityPage";
 import { DashboardPage } from "./pages/DashboardPage";
@@ -24,15 +29,18 @@ export function App() {
   const auth = useAuth();
   const { members, progress, loading, error, toggle } = useProgress();
   const quizzes = useQuizzes();
+  const duels = useDuels();
   const route = useRoute();
   const [quizItem, setQuizItem] = useState<RoadmapItem | null>(null);
+  const [challengeItem, setChallengeItem] = useState<RoadmapItem | null>(null);
+  const [duelId, setDuelId] = useState<string | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
   const me = auth.profile;
   const now = new Date();
 
   const stats = useMemo(
-    () => new Map(members.map((m) => [m.id, playerStats(m.id, progress, quizzes.results, new Date())] as const)),
-    [members, progress, quizzes.results],
+    () => new Map(members.map((m) => [m.id, playerStats(m.id, progress, quizzes.results, new Date(), duels.duels)] as const)),
+    [members, progress, quizzes.results, duels.duels],
   );
   const ranked = useMemo(() => rankPlayers([...stats.values()]), [stats]);
   const colorOf = useCallback(
@@ -53,6 +61,22 @@ export function App() {
       setToast({ id: Date.now(), title: `Level ${myStats.level.level}!`, body: `You're now a ${myStats.level.title}.` });
     }
   }, [myStats]);
+
+  const seenDuels = useRef<Set<string> | null>(null);
+  useEffect(() => {
+    if (!me) return;
+    const won = duels.duels.filter((d) => d.status === "done" && d.winner === me.id).map((d) => d.id);
+    if (seenDuels.current === null) {
+      seenDuels.current = new Set(won);
+      return;
+    }
+    const fresh = won.filter((id) => !seenDuels.current!.has(id));
+    fresh.forEach((id) => seenDuels.current!.add(id));
+    if (fresh.length > 0) {
+      bigCelebration();
+      setToast({ id: Date.now(), title: "Duel won!", body: "+15 XP. Check the Duels panel for the score." });
+    }
+  }, [duels.duels, me]);
 
   useEffect(() => {
     if (!toast) return;
@@ -83,6 +107,18 @@ export function App() {
     colorOf, memberById,
     onToggle: me?.is_member ? onToggle : null,
     onQuiz: me?.is_member ? setQuizItem : null,
+    duels: duels.duels, duelEntries: duels.entries,
+    onDuel: me?.is_member ? setChallengeItem : null,
+    onPlayDuel: me?.is_member ? setDuelId : null,
+  };
+  const playingDuel = duelId ? duels.duels.find((d) => d.id === duelId) : undefined;
+  const duelRival = playingDuel && me ? memberById(playingDuel.challenger === me.id ? playingDuel.opponent : playingDuel.challenger) : undefined;
+  const duelVerdict = (r: DuelResult) => {
+    const rivalName = duelRival?.github_username ?? "your rival";
+    if (r.status === "open") return `Locked in at ${formatTime(r.time_ms)}. Waiting for ${rivalName} to play.`;
+    const line = `${r.score}–${r.opponent_score} (${formatTime(r.time_ms)} vs ${formatTime(r.opponent_time_ms)})`;
+    if (r.winner === null) return `Draw! ${line}. +5 XP.`;
+    return r.winner === me?.id ? `You won! ${line}. +15 XP.` : `${rivalName} wins this one. ${line}.`;
   };
   const signedInNonMember = Boolean(auth.session) && !auth.loading && !me?.is_member;
 
@@ -99,15 +135,47 @@ export function App() {
         {route.page === "dashboard" && <DashboardPage data={data} />}
         {route.page === "roadmap" && <RoadmapPage data={data} phaseId={route.phase} />}
         {route.page === "activity" && <ActivityPage data={data} />}
+        {route.page === "player" && route.player && <ProfilePage data={data} username={route.player} />}
       </main>
 
       {quizItem && (
         <QuizDialog
           key={quizItem.id}
-          item={quizItem}
-          quizzes={quizzes}
+          eyebrow="Quiz"
+          title={quizItem.title}
+          loadingText="Picking 5 questions…"
+          start={() => quizzes.start(quizItem)}
+          submit={quizzes.submit}
+          canRetry
           onClose={() => setQuizItem(null)}
           onPerfect={bigCelebration}
+        />
+      )}
+
+      {challengeItem && me && (
+        <ChallengeDialog
+          key={challengeItem.id}
+          item={challengeItem}
+          rivals={members.filter((m) => m.id !== me.id)}
+          colorOf={colorOf}
+          create={duels.create}
+          onCreated={(id) => { setChallengeItem(null); setDuelId(id); }}
+          onClose={() => setChallengeItem(null)}
+        />
+      )}
+
+      {duelId && (
+        <QuizDialog<DuelResult>
+          key={duelId}
+          eyebrow={duelRival ? `Duel vs ${duelRival.github_username}` : "Duel"}
+          title={findRoadmapItem(playingDuel?.item_id ?? "")?.title ?? "Quiz duel"}
+          loadingText="Get ready… the clock starts when the questions appear."
+          start={() => duels.start(duelId)}
+          submit={duels.submit}
+          timed
+          verdict={duelVerdict}
+          onClose={() => setDuelId(null)}
+          onPerfect={() => undefined}
         />
       )}
 

@@ -2,6 +2,7 @@ import { BADGES, type PlayerStats } from "../gamify";
 import type { Profile } from "../supabase";
 import { Avatar } from "./Avatar";
 import { BadgeIcon } from "./BadgeIcon";
+import { href } from "../route";
 
 interface Props {
   readonly member: Profile;
@@ -26,7 +27,7 @@ export function PlayerCard({ member, stats, rank, color, isMe, delay }: Props) {
         <Avatar member={member} size={64} color={color} />
         <div className="player-id">
           <div className="player-name">
-            {member.display_name || member.github_username}
+            <a href={href({ page: "player", player: member.github_username })}>{member.display_name || member.github_username}</a>
             {isMe && <span className="tag-you">you</span>}
           </div>
           <div className="player-title">Lv {level.level} · {level.title}</div>
@@ -46,7 +47,7 @@ export function PlayerCard({ member, stats, rank, color, isMe, delay }: Props) {
       <dl className="player-stats">
         <div><dt>XP this wk</dt><dd>+{stats.weekXp}</dd></div>
         <div><dt>Streak</dt><dd className={stats.streak >= 2 ? "hot" : ""}>{stats.streak} wk</dd></div>
-        <div><dt>Done</dt><dd>{stats.itemsDone}</dd></div>
+        <div><dt>Duel wins</dt><dd>{stats.duelWins}</dd></div>
       </dl>
 
       <div className="player-badges" aria-label="Badges">

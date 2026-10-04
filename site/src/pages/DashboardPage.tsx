@@ -8,6 +8,7 @@ import { ActivityList } from "../components/ActivityList";
 import { BadgeCabinet } from "../components/BadgeCabinet";
 import { PlayerCard } from "../components/PlayerCard";
 import { QuestRow } from "../components/QuestRow";
+import { DuelsPanel } from "../components/DuelsPanel";
 
 function weekLine(now: Date): string {
   const week = weekNumber(START_DATE, now);
@@ -22,7 +23,7 @@ export function DashboardPage({ data }: { readonly data: LabData }) {
   const { me, members, ranked, progress, now, loading } = data;
   const current = phaseForWeek(PHASES, weekNumber(START_DATE, now)) ?? PHASES[0];
   const quests = me?.is_member ? nextQuests(PHASES, current.id, progress[me.id] ?? {}) : [];
-  const feed = buildFeed(progress, data.quizResults, 6);
+  const feed = buildFeed(progress, data.quizResults, 6, data.duels, data.duelEntries);
 
   return (
     <div className="page dashboard">
@@ -92,6 +93,8 @@ export function DashboardPage({ data }: { readonly data: LabData }) {
           {feed.length === 0 ? <p className="empty">Nothing yet. Tick a quest and it shows up here.</p> : <ActivityList events={feed} data={data} />}
         </section>
       </div>
+
+      <DuelsPanel data={data} />
 
       <BadgeCabinet data={data} />
     </div>

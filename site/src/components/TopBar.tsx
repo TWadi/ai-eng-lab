@@ -41,7 +41,7 @@ export function TopBar({ page, auth, enabled, myStats, myColor }: Props) {
         ) : session ? (
           <>
             {profile && myStats && (
-              <a className="me-chip" href={href({ page: "dashboard" })} title={`${myStats.level.title} · ${myStats.xp} XP`}>
+              <a className="me-chip" href={href({ page: "player", player: profile.github_username })} title={`Your profile · ${myStats.level.title} · ${myStats.xp} XP`}>
                 <Avatar member={profile} size={30} color={myColor} />
                 <span className="me-level">Lv {myStats.level.level}</span>
               </a>

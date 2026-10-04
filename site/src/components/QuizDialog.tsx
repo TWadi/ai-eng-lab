@@ -1,33 +1,59 @@
-import { useEffect, useRef, useState } from "react";
-import type { RoadmapItem } from "../roadmap";
-import type { GradedQuiz, OpenQuiz, QuizzesState } from "../hooks/useQuizzes";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import type { GradedQuiz, OpenQuiz, Outcome } from "../hooks/useQuizzes";
 
-interface Props {
-  readonly item: RoadmapItem;
-  readonly quizzes: QuizzesState;
+interface Props<R extends GradedQuiz> {
+  readonly eyebrow: string;
+  readonly title: string;
+  readonly loadingText: string;
+  readonly start: () => Promise<Outcome<OpenQuiz>>;
+  readonly submit: (id: string, answers: readonly number[]) => Promise<Outcome<R>>;
   readonly onClose: () => void;
   readonly onPerfect: () => void;
+  /** Headline under the score; defaults to a solo-quiz verdict. */
+  readonly verdict?: (result: R) => ReactNode;
+  /** Show a running clock while answering (duels). */
+  readonly timed?: boolean;
+  /** Offer "New quiz" after grading (solo quizzes only). */
+  readonly canRetry?: boolean;
 }
 
-type Stage =
+type Stage<R> =
   | { readonly name: "loading" }
   | { readonly name: "answering"; readonly quiz: OpenQuiz }
   | { readonly name: "submitting"; readonly quiz: OpenQuiz }
-  | { readonly name: "graded"; readonly result: GradedQuiz }
+  | { readonly name: "graded"; readonly result: R }
   | { readonly name: "error"; readonly message: string };
 
 const LETTERS = ["A", "B", "C", "D"];
 
-export function QuizDialog({ item, quizzes, onClose, onPerfect }: Props) {
+function soloVerdict(r: GradedQuiz): string {
+  if (r.score === r.total) return "Flawless! +10 XP bonus.";
+  return r.score >= r.total * 0.6 ? "Solid run." : "Worth another look at the video.";
+}
+
+function Clock({ since }: { readonly since: number }) {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const t = window.setInterval(() => setNow(Date.now()), 250);
+    return () => window.clearInterval(t);
+  }, []);
+  return <span className="quiz-clock" aria-label="Time so far">{((now - since) / 1000).toFixed(1)}s</span>;
+}
+
+export function QuizDialog<R extends GradedQuiz>({
+  eyebrow, title, loadingText, start, submit, onClose, onPerfect, verdict, timed = false, canRetry = false,
+}: Props<R>) {
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const [stage, setStage] = useState<Stage>({ name: "loading" });
+  const [stage, setStage] = useState<Stage<R>>({ name: "loading" });
   const [answers, setAnswers] = useState<readonly (number | null)[]>([]);
+  const [startedAt, setStartedAt] = useState(Date.now());
 
   const load = async () => {
     setStage({ name: "loading" });
-    const res = await quizzes.start(item);
+    const res = await start();
     if (res.ok) {
       setAnswers(res.value.questions.map(() => null));
+      setStartedAt(res.value.started_at ? new Date(res.value.started_at).getTime() : Date.now());
       setStage({ name: "answering", quiz: res.value });
     } else {
       setStage({ name: "error", message: res.error });
@@ -41,10 +67,10 @@ export function QuizDialog({ item, quizzes, onClose, onPerfect }: Props) {
 
   const choose = (q: number, option: number) => setAnswers((cur) => cur.map((a, i) => (i === q ? option : a)));
 
-  const submit = async (quiz: OpenQuiz) => {
+  const send = async (quiz: OpenQuiz) => {
     if (answers.some((a) => a === null)) return;
     setStage({ name: "submitting", quiz });
-    const res = await quizzes.submit(quiz.id, answers as number[]);
+    const res = await submit(quiz.id, answers as number[]);
     setStage(res.ok ? { name: "graded", result: res.value } : { name: "error", message: res.error });
     if (res.ok && res.value.score === res.value.total) onPerfect();
   };
@@ -55,15 +81,13 @@ export function QuizDialog({ item, quizzes, onClose, onPerfect }: Props) {
     <dialog ref={dialogRef} className="quiz" onClose={onClose} aria-labelledby="quiz-title">
       <header className="quiz-head">
         <div>
-          <div className="ph-code">Quiz</div>
-          <h2 id="quiz-title">{item.title}</h2>
+          <div className="ph-code">{eyebrow}</div>
+          <h2 id="quiz-title">{title}</h2>
         </div>
         <button type="button" className="btn btn-ghost" onClick={() => dialogRef.current?.close()}>Close</button>
       </header>
 
-      {stage.name === "loading" && (
-        <p className="quiz-status" role="status">Picking 5 questions…</p>
-      )}
+      {stage.name === "loading" && <p className="quiz-status" role="status">{loadingText}</p>}
 
       {stage.name === "error" && (
         <div className="quiz-status">
@@ -73,7 +97,7 @@ export function QuizDialog({ item, quizzes, onClose, onPerfect }: Props) {
       )}
 
       {(stage.name === "answering" || stage.name === "submitting") && (
-        <form className="quiz-body" onSubmit={(e) => { e.preventDefault(); void submit(stage.quiz); }}>
+        <form className="quiz-body" onSubmit={(e) => { e.preventDefault(); void send(stage.quiz); }}>
           {stage.quiz.questions.map((q, qi) => (
             <fieldset key={qi} className="quiz-q">
               <legend><span className="quiz-num">{qi + 1}</span>{q.question}</legend>
@@ -87,7 +111,9 @@ export function QuizDialog({ item, quizzes, onClose, onPerfect }: Props) {
             </fieldset>
           ))}
           <div className="quiz-foot">
-            <span className="muted">{unanswered === 0 ? "All answered." : `${unanswered} left to answer.`}</span>
+            <span className="muted">
+              {timed && <Clock since={startedAt} />} {unanswered === 0 ? "All answered." : `${unanswered} left to answer.`}
+            </span>
             <button type="submit" className="btn btn-primary" disabled={unanswered > 0 || stage.name === "submitting"}>
               {stage.name === "submitting" ? "Checking…" : "Submit answers"}
             </button>
@@ -97,10 +123,10 @@ export function QuizDialog({ item, quizzes, onClose, onPerfect }: Props) {
 
       {stage.name === "graded" && (
         <div className="quiz-body">
-          <p className="quiz-score">
+          <div className="quiz-score">
             <b>{stage.result.score}/{stage.result.total}</b>
-            <span className="quiz-verdict">{stage.result.score === stage.result.total ? "Flawless! +10 XP bonus." : stage.result.score >= stage.result.total * 0.6 ? "Solid run." : "Worth another look at the video."}</span>
-          </p>
+            <span className="quiz-verdict">{verdict ? verdict(stage.result) : soloVerdict(stage.result)}</span>
+          </div>
           {stage.result.questions.map((q, qi) => {
             const picked = stage.result.answers[qi];
             const right = picked === q.answer_index;
@@ -117,7 +143,7 @@ export function QuizDialog({ item, quizzes, onClose, onPerfect }: Props) {
             );
           })}
           <div className="quiz-foot">
-            <button type="button" className="btn btn-ghost" onClick={() => void load()}>New quiz</button>
+            {canRetry ? <button type="button" className="btn btn-ghost" onClick={() => void load()}>New quiz</button> : <span />}
             <button type="button" className="btn btn-primary" onClick={() => dialogRef.current?.close()}>Done</button>
           </div>
         </div>
