@@ -60,7 +60,7 @@ export function QuizDialog({ item, quizzes, onClose }: Props) {
       </header>
 
       {stage.name === "loading" && (
-        <p className="quiz-status" role="status">Claude is writing 5 questions for you. This takes 10–30 seconds…</p>
+        <p className="quiz-status" role="status">Picking 5 questions…</p>
       )}
 
       {stage.name === "error" && (

@@ -78,6 +78,7 @@ export function App() {
               me={me}
               onToggle={(itemId, done) => me && toggle(me.id, itemId, done)}
               quizResults={quizzes.results}
+              quizAvailable={quizzes.available}
               onQuiz={me?.is_member ? setQuizItem : null}
             />
           ))}
