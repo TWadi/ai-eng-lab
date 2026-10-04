@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from "react";
-import { FunctionsHttpError } from "@supabase/supabase-js";
 import { supabase } from "../supabase";
 import type { QuizResult } from "../activity";
 import type { RoadmapItem } from "../roadmap";
@@ -40,6 +39,8 @@ export type Outcome<T> = { readonly ok: true; readonly value: T } | { readonly o
 
 export interface QuizzesState {
   readonly results: readonly QuizResult[];
+  /** Roadmap item ids that have questions in the bank. */
+  readonly available: ReadonlySet<string>;
   readonly start: (item: RoadmapItem) => Promise<Outcome<OpenQuiz>>;
   readonly submit: (quizId: string, answers: readonly number[]) => Promise<Outcome<GradedQuiz>>;
 }
@@ -54,20 +55,15 @@ function toResult(row: Record<string, unknown>): QuizResult | null {
   };
 }
 
-async function functionError(err: unknown): Promise<string> {
-  if (err instanceof FunctionsHttpError) {
-    try {
-      const body = await err.context.json();
-      if (body?.error) return String(body.error);
-    } catch {
-      // fall through to the generic message
-    }
-  }
-  return "Couldn't create a quiz right now. Check your connection and try again.";
+/** Database exceptions raised on purpose (limits, membership) carry a readable message; anything else gets a generic one. */
+function quizError(err: { message?: string; code?: string } | null): string {
+  if (err?.code === "P0001" && err.message) return err.message;
+  return "Couldn't start a quiz right now. Check your connection and try again.";
 }
 
 export function useQuizzes(): QuizzesState {
   const [results, setResults] = useState<readonly QuizResult[]>([]);
+  const [available, setAvailable] = useState<ReadonlySet<string>>(new Set());
 
   useEffect(() => {
     const client = supabase;
@@ -83,6 +79,16 @@ export function useQuizzes(): QuizzesState {
         return;
       }
       setResults((data ?? []).map(toResult).filter((r): r is QuizResult => r !== null));
+    })();
+
+    (async () => {
+      const { data, error } = await client.rpc("quiz_items");
+      if (!active) return;
+      if (error) {
+        console.error("Failed to load which items have quizzes", error);
+        return;
+      }
+      setAvailable(new Set(((data ?? []) as { item_id: string }[]).map((r) => r.item_id)));
     })();
 
     const channel = client
@@ -101,12 +107,11 @@ export function useQuizzes(): QuizzesState {
 
   const start = useCallback(async (item: RoadmapItem): Promise<Outcome<OpenQuiz>> => {
     if (!supabase) return { ok: false, error: "The site isn't connected to its database." };
-    const { data, error } = await supabase.functions.invoke("quiz", {
-      body: { item_id: item.id, title: item.title, topics: item.topics ?? [] },
-    });
-    if (error) {
-      console.error("Quiz function failed", error);
-      return { ok: false, error: await functionError(error) };
+    // Picks 5 random questions from the bank in the database; free, no AI call.
+    const { data, error } = await supabase.rpc("start_quiz", { p_item: item.id });
+    if (error || !data) {
+      console.error("Failed to start quiz", error);
+      return { ok: false, error: quizError(error) };
     }
     return { ok: true, value: data as OpenQuiz };
   }, []);
@@ -133,5 +138,5 @@ export function useQuizzes(): QuizzesState {
     };
   }, []);
 
-  return { results, start, submit };
+  return { results, available, start, submit };
 }

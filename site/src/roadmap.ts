@@ -9,7 +9,7 @@ export interface RoadmapItem {
   readonly title: string;
   readonly url?: string;
   readonly source?: string;
-  /** Key concepts, used to write quiz questions. */
+  /** Key concepts the item covers (the quiz bank in supabase/quiz-bank is written from these). */
   readonly topics?: readonly string[];
 }
 

@@ -13,12 +13,13 @@ interface Props {
   readonly me: Profile | null;
   readonly onToggle: (itemId: string, done: boolean) => void;
   readonly quizResults: readonly QuizResult[];
+  readonly quizAvailable: ReadonlySet<string>;
   readonly onQuiz: ((item: RoadmapItem) => void) | null;
 }
 
 const fmt = (d: Date) => d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
 
-export function PhaseCard({ phase, isCurrent, members, progress, me, onToggle, quizResults, onQuiz }: Props) {
+export function PhaseCard({ phase, isCurrent, members, progress, me, onToggle, quizResults, quizAvailable, onQuiz }: Props) {
   const [from, to] = phase.weeks;
   const range = from < 1 ? "before week 1" : from === to ? `wk ${from}` : `wk ${from}–${to}`;
   const canEdit = Boolean(me?.is_member);
@@ -49,7 +50,7 @@ export function PhaseCard({ phase, isCurrent, members, progress, me, onToggle, q
           const inputId = `cb-${item.id}`;
           const best = bestScores(quizResults, item.id);
           const scored = members.filter((m) => best[m.id]);
-          const quizzable = item.kind === "learn";
+          const quizzable = quizAvailable.has(item.id);
           return (
             <li key={item.id} className={doneByMe ? "is-done" : ""}>
               {canEdit ? (
