@@ -1,6 +1,8 @@
 import type { ProgressByUser } from "./progress";
 import { PHASES, type RoadmapItem } from "./roadmap";
 import type { Duel, DuelEntry } from "./duels";
+import type { ChallengeSolve } from "./hooks/useSolves";
+import { findChallenge } from "./lab/challenges";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -17,6 +19,7 @@ export type ActivityEvent =
   | { readonly kind: "done"; readonly userId: string; readonly itemId: string; readonly at: string }
   | { readonly kind: "quiz"; readonly userId: string; readonly itemId: string; readonly at: string; readonly score: number; readonly total: number }
   /** userId is the winner (or the challenger in a draw). */
+  | { readonly kind: "solve"; readonly userId: string; readonly itemId: string; readonly at: string; readonly challengeId: string; readonly title: string; readonly xp: number }
   | { readonly kind: "duel"; readonly userId: string; readonly rivalId: string; readonly itemId: string; readonly at: string; readonly draw: boolean; readonly score: number | null; readonly rivalScore: number | null };
 
 export function findRoadmapItem(itemId: string): RoadmapItem | undefined {
@@ -34,6 +37,7 @@ export function buildFeed(
   limit = 30,
   duels: readonly Duel[] = [],
   entries: readonly DuelEntry[] = [],
+  solves: readonly ChallengeSolve[] = [],
 ): readonly ActivityEvent[] {
   const done: ActivityEvent[] = Object.entries(progress).flatMap(([userId, items]) =>
     Object.entries(items).map(([itemId, at]) => ({ kind: "done" as const, userId, itemId, at })),
@@ -52,7 +56,11 @@ export function buildFeed(
         score: scoreOf(d.id, userId), rivalScore: scoreOf(d.id, rivalId),
       };
     });
-  return [...done, ...quiz, ...duel]
+  const solved: ActivityEvent[] = solves.flatMap((s) => {
+    const c = findChallenge(s.challenge_id);
+    return c ? [{ kind: "solve" as const, userId: s.user_id, itemId: c.item, at: s.solved_at, challengeId: c.id, title: c.title, xp: c.xp }] : [];
+  });
+  return [...done, ...quiz, ...duel, ...solved]
     .filter((e) => findRoadmapItem(e.itemId))
     .sort((a, b) => b.at.localeCompare(a.at))
     .slice(0, limit);

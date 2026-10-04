@@ -1,5 +1,6 @@
 import { BADGE_PATHS } from "./components/BadgeIcon";
 import { CARD_H, CARD_W, SITE_URL, type CardModel } from "./share";
+import { BADGES } from "./gamify";
 
 /** Fixed light palette: the card looks the same whatever theme the viewer uses. */
 const C = {
@@ -219,8 +220,8 @@ export async function drawCard(canvas: HTMLCanvasElement, model: CardModel, avat
   if (model.badges.length > 0) {
     ctx.fillStyle = C.muted;
     ctx.font = `600 16px ${MONO}`;
-    ctx.fillText(`BADGES ${model.badges.length}/10`, rx, by - 6);
-    model.badges.slice(0, 10).forEach((id, i) => badgeGlyph(ctx, id, rx + 30 + i * 70, by + 38, 56));
+    ctx.fillText(`BADGES ${model.badges.length}/${BADGES.length}`, rx, by - 6);
+    model.badges.slice(0, 10).forEach((id, i) => badgeGlyph(ctx, id, rx + 30 + i * 66, by + 38, 54));
   }
 
   // Level sticker, top right (not on badge cards, where the badge takes that spot).

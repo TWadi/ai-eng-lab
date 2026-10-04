@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { bigCelebration, popFrom } from "./celebrate";
 import { phaseDone, playerStats, rankPlayers, type PlayerStats } from "./gamify";
 import { useAuth } from "./hooks/useAuth";
 import { useProgress } from "./hooks/useProgress";
 import { useQuizzes } from "./hooks/useQuizzes";
 import { useDuels } from "./hooks/useDuels";
+import { useSolves } from "./hooks/useSolves";
+import { findChallenge } from "./lab/challenges";
 import { PLAYER_COLORS, type LabData } from "./lab";
 import { PHASES, type RoadmapItem } from "./roadmap";
 import { useRoute } from "./route";
@@ -19,6 +21,9 @@ import { ActivityPage } from "./pages/ActivityPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { RoadmapPage } from "./pages/RoadmapPage";
 
+// The Lab pulls in a code editor and is only needed on its own page.
+const LabPage = lazy(() => import("./lab/LabPage"));
+
 interface Toast {
   readonly id: number;
   readonly title: string;
@@ -30,6 +35,7 @@ export function App() {
   const { members, progress, loading, error, toggle } = useProgress();
   const quizzes = useQuizzes();
   const duels = useDuels();
+  const solveState = useSolves();
   const route = useRoute();
   const [quizItem, setQuizItem] = useState<RoadmapItem | null>(null);
   const [challengeItem, setChallengeItem] = useState<RoadmapItem | null>(null);
@@ -39,8 +45,8 @@ export function App() {
   const now = new Date();
 
   const stats = useMemo(
-    () => new Map(members.map((m) => [m.id, playerStats(m.id, progress, quizzes.results, new Date(), duels.duels)] as const)),
-    [members, progress, quizzes.results, duels.duels],
+    () => new Map(members.map((m) => [m.id, playerStats(m.id, progress, quizzes.results, new Date(), duels.duels, solveState.solves)] as const)),
+    [members, progress, quizzes.results, duels.duels, solveState.solves],
   );
   const ranked = useMemo(() => rankPlayers([...stats.values()]), [stats]);
   const colorOf = useCallback(
@@ -61,6 +67,21 @@ export function App() {
       setToast({ id: Date.now(), title: `Level ${myStats.level.level}!`, body: `You're now a ${myStats.level.title}.` });
     }
   }, [myStats]);
+
+  const { record } = solveState;
+  const onSolved = useCallback(
+    (challengeId: string) => {
+      if (!me) return;
+      if (solveState.solves.some((s) => s.user_id === me.id && s.challenge_id === challengeId)) return;
+      void record(me.id, challengeId).then((ok) => {
+        if (!ok) return;
+        bigCelebration();
+        const c = findChallenge(challengeId);
+        setToast({ id: Date.now(), title: "Challenge solved!", body: `${c?.title ?? "Nice"} · +${c?.xp ?? 0} XP` });
+      });
+    },
+    [me, record, solveState.solves],
+  );
 
   const showToast = useCallback((title: string, body: string) => setToast({ id: Date.now(), title, body }), []);
   const onDuelWin = useCallback(() => {
@@ -107,6 +128,8 @@ export function App() {
     duels: duels.duels, duelEntries: duels.entries,
     onDuel: me?.is_member ? setChallengeItem : null,
     onPlayDuel: me?.is_member ? showInvite : null,
+    solves: solveState.solves,
+    onSolved: me?.is_member ? onSolved : null,
   };
   const signedInNonMember = Boolean(auth.session) && !auth.loading && !me?.is_member;
 
@@ -128,6 +151,11 @@ export function App() {
         {route.page === "roadmap" && <RoadmapPage data={data} phaseId={route.phase} />}
         {route.page === "activity" && <ActivityPage data={data} />}
         {route.page === "player" && route.player && <ProfilePage data={data} username={route.player} />}
+        {route.page === "lab" && (
+          <Suspense fallback={<p className="muted">Opening the Lab…</p>}>
+            <LabPage data={data} sub={route.lab} />
+          </Suspense>
+        )}
       </main>
 
       {quizItem && (
