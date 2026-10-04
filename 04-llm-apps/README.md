@@ -12,6 +12,7 @@ Build reliable products on foundation models: prompting, structured output, RAG,
 - [ ] Embeddings + vector search with [pgvector](https://github.com/pgvector/pgvector)
 - [ ] Read: *AI Engineering* (Chip Huyen) ch. 1–6
 - [ ] [Evals](https://hamel.dev/blog/posts/evals/): 50-question test set, score retrieval and answers
+- [ ] Rewatch [Complete RAG Tutorial 2026](https://www.youtube.com/playlist?list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY) (Harish Neel) and build along
 - [ ] **Build:** RAG app over your lecture PDFs with cited answers
 
 ## Ship

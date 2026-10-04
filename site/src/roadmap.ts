@@ -35,6 +35,7 @@ export const PHASES: readonly Phase[] = [
       { id: "p0-3", kind: "setup", title: "Create accounts: GitHub, Hugging Face, Kaggle, Google Colab, Anthropic Console (set a spend limit)" },
       { id: "p0-4", kind: "learn", title: "The Missing Semester: shell, editors, version control", url: "https://missing.csail.mit.edu", source: "MIT" },
       { id: "p0-5", kind: "setup", title: "Agree on the weekly rhythm and calendar the Thursday pair session" },
+      { id: "p0-6", kind: "learn", title: "Preview: watch the Complete RAG Tutorial 2026 playlist for the big picture", url: "https://www.youtube.com/playlist?list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "Harish Neel · YouTube" },
     ],
   },
   {
@@ -88,6 +89,7 @@ export const PHASES: readonly Phase[] = [
       { id: "p4-4", kind: "learn", title: "Embeddings and vector search with Postgres + pgvector", url: "https://github.com/pgvector/pgvector", source: "pgvector" },
       { id: "p4-5", kind: "learn", title: "Read: AI Engineering, chapters 1–6", source: "Chip Huyen · O'Reilly" },
       { id: "p4-6", kind: "learn", title: "Evals: 50-question test set, score retrieval and answers", url: "https://hamel.dev/blog/posts/evals/", source: "Hamel Husain" },
+      { id: "p4-8", kind: "learn", title: "Rewatch the Complete RAG Tutorial 2026 and build along", url: "https://www.youtube.com/playlist?list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "Harish Neel · YouTube" },
       { id: "p4-7", kind: "build", title: "RAG app over your lecture PDFs with cited answers" },
     ],
   },
