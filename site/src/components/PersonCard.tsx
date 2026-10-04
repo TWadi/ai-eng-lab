@@ -1,17 +1,20 @@
 import type { Profile } from "../supabase";
 import { PHASES, ALL_ITEM_IDS } from "../roadmap";
 import { countDone, percent } from "../progress";
+import { weekStats } from "../activity";
 
 interface Props {
   readonly member: Profile;
   readonly done: Readonly<Record<string, string>> | undefined;
   readonly isMe: boolean;
+  readonly now: Date;
 }
 
-export function PersonCard({ member, done, isMe }: Props) {
+export function PersonCard({ member, done, isMe, now }: Props) {
   const total = ALL_ITEM_IDS.length;
   const n = countDone(done, ALL_ITEM_IDS);
   const pct = percent(n, total);
+  const { thisWeek, streak } = weekStats(Object.values(done ?? {}), now);
 
   return (
     <article className="person">
@@ -39,7 +42,15 @@ export function PersonCard({ member, done, isMe }: Props) {
           );
         })}
       </div>
-      <div className="person-foot">{n} of {total} items</div>
+      <div className="person-foot">
+        <span>{n} of {total} items</span>
+        <span className="person-stats">
+          <span title="Items finished since Monday">{thisWeek} this week</span>
+          <span className={`streak${streak >= 2 ? " hot" : ""}`} title="Weeks in a row with at least one finished item">
+            {streak === 0 ? "no streak yet" : `${streak}-week streak`}
+          </span>
+        </span>
+      </div>
     </article>
   );
 }
