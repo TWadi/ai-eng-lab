@@ -33,6 +33,7 @@ export function App() {
       {signedInNonMember && (
         <p className="banner">You're signed in, but only the two lab members can tick items. You can still follow along here.</p>
       )}
+      {auth.error && <p className="banner error" role="alert">{auth.error}</p>}
       {error && <p className="banner error" role="alert">{error}</p>}
 
       <section className="people" aria-label="Progress per person">

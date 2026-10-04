@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase, type Profile } from "../supabase";
+import { readAuthError } from "../authError";
 
 export interface AuthState {
   readonly session: Session | null;
   readonly profile: Profile | null;
   readonly loading: boolean;
+  readonly error: string | null;
   readonly signIn: () => Promise<void>;
   readonly signOut: () => Promise<void>;
 }
@@ -25,6 +27,14 @@ export function useAuth(): AuthState {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(Boolean(supabase));
+  const [error] = useState(() => readAuthError(window.location.search, window.location.hash));
+
+  useEffect(() => {
+    if (error) {
+      // Clean the URL so a refresh doesn't show the old error again.
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+  }, [error]);
 
   useEffect(() => {
     if (!supabase) return;
@@ -62,5 +72,5 @@ export function useAuth(): AuthState {
     if (error) console.error("Sign-out failed", error);
   };
 
-  return { session, profile, loading, signIn, signOut };
+  return { session, profile, loading, error, signIn, signOut };
 }
