@@ -9,6 +9,8 @@ export interface RoadmapItem {
   readonly title: string;
   readonly url?: string;
   readonly source?: string;
+  /** Key concepts, used to write quiz questions. */
+  readonly topics?: readonly string[];
 }
 
 export interface Phase {
@@ -32,23 +34,23 @@ export const PHASES: readonly Phase[] = [
     goal: "A hands-on tour of retrieval augmented generation before the main track starts. Watch together, tick each video, and post a note on anything unclear.",
     ship: "A note for every video in your own words, plus the code from #3 and #6 running on your machine.",
     items: [
-      { id: "rag-1", kind: "learn", title: "#1 Complete introduction to retrieval augmented generation", url: "https://www.youtube.com/watch?v=63B-3rqRFbQ&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube" },
-      { id: "rag-2", kind: "learn", title: "#2 Vector embeddings and RAG architecture explained", url: "https://www.youtube.com/watch?v=9iGvXxH_fdE&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube" },
-      { id: "rag-3", kind: "build", title: "#3 Build a data ingestion pipeline with Python", url: "https://www.youtube.com/watch?v=LK-OyelN9MU&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube" },
-      { id: "rag-4", kind: "learn", title: "#4 Document retrieval implementation with LangChain", url: "https://www.youtube.com/watch?v=brbd3AvsJWs&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube" },
-      { id: "rag-5", kind: "learn", title: "#5 Cosine similarity for vector search explained", url: "https://www.youtube.com/watch?v=nbJVJ1RPBEg&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube" },
-      { id: "rag-6", kind: "build", title: "#6 Build your first RAG application from scratch", url: "https://www.youtube.com/watch?v=i_v4Vm2KBuc&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube" },
-      { id: "rag-7", kind: "build", title: "#7 Conversational RAG with chat history", url: "https://www.youtube.com/watch?v=ZWXXpK4TIDY&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube" },
-      { id: "rag-8", kind: "learn", title: "#8 Text chunking strategies for better RAG performance", url: "https://www.youtube.com/watch?v=POE8LDjdAw4&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube" },
-      { id: "rag-9", kind: "learn", title: "#9 Advanced text splitting with LangChain", url: "https://www.youtube.com/watch?v=Ht8ImZT6kJ0&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube" },
-      { id: "rag-10", kind: "learn", title: "#10 Semantic chunking for improved RAG results", url: "https://www.youtube.com/watch?v=FPYtGK6HYRg&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube" },
-      { id: "rag-11", kind: "learn", title: "#11 AI agent-based document chunking", url: "https://www.youtube.com/watch?v=slG8qWvIPKg&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube" },
-      { id: "rag-12", kind: "learn", title: "#12 Multi-modal RAG with images and documents", url: "https://www.youtube.com/watch?v=dHgvDTXVvPA&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube" },
-      { id: "rag-13", kind: "learn", title: "#13 Advanced document retrieval techniques", url: "https://www.youtube.com/watch?v=kNU-J4NNNhk&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube" },
-      { id: "rag-14", kind: "learn", title: "#14 Multi-query RAG for better search results", url: "https://www.youtube.com/watch?v=ghwZVc9G0ac&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube" },
-      { id: "rag-15", kind: "learn", title: "#15 Reciprocal rank fusion for enhanced RAG performance", url: "https://www.youtube.com/watch?v=1qQCuWiRIfA&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube" },
-      { id: "rag-16", kind: "learn", title: "#16 Hybrid search: combining vector and keyword search", url: "https://www.youtube.com/watch?v=7WEtNxVh1vo&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube" },
-      { id: "rag-17", kind: "learn", title: "#17 RAG reranking and next steps", url: "https://www.youtube.com/watch?v=VWA15n6uiS4&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube" },
+      { id: "rag-1", kind: "learn", title: "#1 Complete introduction to retrieval augmented generation", url: "https://www.youtube.com/watch?v=63B-3rqRFbQ&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube", topics: ["what RAG is and why it exists", "LLM hallucination and knowledge cutoff", "retrieval step vs generation step", "indexing time vs query time"] },
+      { id: "rag-2", kind: "learn", title: "#2 Vector embeddings and RAG architecture explained", url: "https://www.youtube.com/watch?v=9iGvXxH_fdE&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube", topics: ["vector embeddings", "semantic similarity", "vector databases", "ingestion pipeline vs retrieval pipeline"] },
+      { id: "rag-3", kind: "build", title: "#3 Build a data ingestion pipeline with Python", url: "https://www.youtube.com/watch?v=LK-OyelN9MU&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube", topics: ["document loaders", "chunk size and chunk overlap", "embedding chunks", "storing vectors in Chroma"] },
+      { id: "rag-4", kind: "learn", title: "#4 Document retrieval implementation with LangChain", url: "https://www.youtube.com/watch?v=brbd3AvsJWs&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube", topics: ["LangChain retrievers", "similarity search", "top-k results", "similarity score thresholds"] },
+      { id: "rag-5", kind: "learn", title: "#5 Cosine similarity for vector search explained", url: "https://www.youtube.com/watch?v=nbJVJ1RPBEg&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube", topics: ["cosine similarity formula", "dot product and vector magnitude", "range of cosine similarity values", "why normalised vectors matter"] },
+      { id: "rag-6", kind: "build", title: "#6 Build your first RAG application from scratch", url: "https://www.youtube.com/watch?v=i_v4Vm2KBuc&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube", topics: ["putting retrieved context into the prompt", "grounding answers in sources", "answering 'I don't know' when context is missing", "end-to-end RAG flow"] },
+      { id: "rag-7", kind: "build", title: "#7 Conversational RAG with chat history", url: "https://www.youtube.com/watch?v=ZWXXpK4TIDY&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube", topics: ["chat history in RAG", "rewriting follow-up questions into standalone queries", "history-aware retrievers"] },
+      { id: "rag-8", kind: "learn", title: "#8 Text chunking strategies for better RAG performance", url: "https://www.youtube.com/watch?v=POE8LDjdAw4&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube", topics: ["fixed-size vs recursive vs semantic chunking", "chunk size trade-offs", "why chunk overlap helps"] },
+      { id: "rag-9", kind: "learn", title: "#9 Advanced text splitting with LangChain", url: "https://www.youtube.com/watch?v=Ht8ImZT6kJ0&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube", topics: ["RecursiveCharacterTextSplitter and its separators", "token-based splitting", "splitting markdown and code"] },
+      { id: "rag-10", kind: "learn", title: "#10 Semantic chunking for improved RAG results", url: "https://www.youtube.com/watch?v=FPYtGK6HYRg&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube", topics: ["semantic chunking with embedding distance", "breakpoint thresholds such as percentiles", "cost of semantic chunking"] },
+      { id: "rag-11", kind: "learn", title: "#11 AI agent-based document chunking", url: "https://www.youtube.com/watch?v=slG8qWvIPKg&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube", topics: ["LLM-driven (agentic) chunking", "propositions as chunks", "cost and latency trade-offs"] },
+      { id: "rag-12", kind: "learn", title: "#12 Multi-modal RAG with images and documents", url: "https://www.youtube.com/watch?v=dHgvDTXVvPA&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube", topics: ["images and tables in documents", "partitioning PDFs with unstructured", "summarising images for retrieval", "multimodal RAG pipelines"] },
+      { id: "rag-13", kind: "learn", title: "#13 Advanced document retrieval techniques", url: "https://www.youtube.com/watch?v=kNU-J4NNNhk&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube", topics: ["maximal marginal relevance (MMR)", "score-threshold retrieval", "metadata filtering"] },
+      { id: "rag-14", kind: "learn", title: "#14 Multi-query RAG for better search results", url: "https://www.youtube.com/watch?v=ghwZVc9G0ac&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube", topics: ["generating multiple query variations", "merging and de-duplicating results", "improving recall"] },
+      { id: "rag-15", kind: "learn", title: "#15 Reciprocal rank fusion for enhanced RAG performance", url: "https://www.youtube.com/watch?v=1qQCuWiRIfA&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube", topics: ["reciprocal rank fusion formula 1/(k + rank)", "the k constant (often 60)", "combining ranked lists from several retrievers"] },
+      { id: "rag-16", kind: "learn", title: "#16 Hybrid search: combining vector and keyword search", url: "https://www.youtube.com/watch?v=7WEtNxVh1vo&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube", topics: ["BM25 keyword search", "dense vs sparse retrieval", "combining keyword and vector search", "weighting in ensemble retrievers"] },
+      { id: "rag-17", kind: "learn", title: "#17 RAG reranking and next steps", url: "https://www.youtube.com/watch?v=VWA15n6uiS4&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "YouTube", topics: ["reranking in two-stage retrieval", "cross-encoders vs bi-encoders", "rerank APIs such as Cohere Rerank", "trade-offs of reranking"] },
     ],
   },
   {

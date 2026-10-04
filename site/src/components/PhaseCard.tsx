@@ -1,8 +1,9 @@
 import type { Profile } from "../supabase";
-import type { Phase } from "../roadmap";
+import type { Phase, RoadmapItem } from "../roadmap";
 import type { ProgressByUser } from "../progress";
 import { START_DATE } from "../roadmap";
 import { weekStart } from "../progress";
+import { bestScores, type QuizResult } from "../activity";
 
 interface Props {
   readonly phase: Phase;
@@ -11,11 +12,13 @@ interface Props {
   readonly progress: ProgressByUser;
   readonly me: Profile | null;
   readonly onToggle: (itemId: string, done: boolean) => void;
+  readonly quizResults: readonly QuizResult[];
+  readonly onQuiz: ((item: RoadmapItem) => void) | null;
 }
 
 const fmt = (d: Date) => d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
 
-export function PhaseCard({ phase, isCurrent, members, progress, me, onToggle }: Props) {
+export function PhaseCard({ phase, isCurrent, members, progress, me, onToggle, quizResults, onQuiz }: Props) {
   const [from, to] = phase.weeks;
   const range = from < 1 ? "before week 1" : from === to ? `wk ${from}` : `wk ${from}–${to}`;
   const canEdit = Boolean(me?.is_member);
@@ -44,6 +47,9 @@ export function PhaseCard({ phase, isCurrent, members, progress, me, onToggle }:
           const doneByMe = item.id in mine;
           const finishers = members.filter((m) => item.id in (progress[m.id] ?? {}));
           const inputId = `cb-${item.id}`;
+          const best = bestScores(quizResults, item.id);
+          const scored = members.filter((m) => best[m.id]);
+          const quizzable = item.kind === "learn";
           return (
             <li key={item.id} className={doneByMe ? "is-done" : ""}>
               {canEdit ? (
@@ -56,6 +62,7 @@ export function PhaseCard({ phase, isCurrent, members, progress, me, onToggle }:
               ) : (
                 <span className="dot" aria-hidden="true" />
               )}
+              <div className="it-main">
               <label className="it-text" htmlFor={canEdit ? inputId : undefined}>
                 <span className={`kind ${item.kind}`}>{item.kind}</span>
                 <span className="it-title">{item.title}</span>
@@ -69,6 +76,19 @@ export function PhaseCard({ phase, isCurrent, members, progress, me, onToggle }:
                   </span>
                 )}
               </label>
+              {quizzable && (onQuiz || scored.length > 0) && (
+                <div className="it-quiz">
+                  {onQuiz && (
+                    <button type="button" className="quiz-btn" onClick={() => onQuiz(item)}>Quiz me</button>
+                  )}
+                  {scored.map((m) => (
+                    <span key={m.id} className={`score-pill${best[m.id].score === best[m.id].total ? " full" : ""}`} title={`Best quiz score of ${m.github_username}`}>
+                      {m.github_username} {best[m.id].score}/{best[m.id].total}
+                    </span>
+                  ))}
+                </div>
+              )}
+              </div>
               <div className="who">
                 {finishers.map((m) =>
                   m.avatar_url ? (

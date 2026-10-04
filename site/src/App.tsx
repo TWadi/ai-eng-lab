@@ -1,10 +1,15 @@
+import { useMemo, useState } from "react";
+import { ActivityFeed } from "./components/ActivityFeed";
 import { Header } from "./components/Header";
 import { PersonCard } from "./components/PersonCard";
 import { PhaseCard } from "./components/PhaseCard";
+import { QuizDialog } from "./components/QuizDialog";
 import { useAuth } from "./hooks/useAuth";
 import { useProgress } from "./hooks/useProgress";
+import { useQuizzes } from "./hooks/useQuizzes";
+import { buildFeed } from "./activity";
 import { phaseForWeek, weekNumber, weekStart } from "./progress";
-import { PHASES, START_DATE, TOTAL_WEEKS } from "./roadmap";
+import { PHASES, START_DATE, TOTAL_WEEKS, type RoadmapItem } from "./roadmap";
 import { supabase } from "./supabase";
 
 function weekLabel(week: number): string {
@@ -18,7 +23,11 @@ function weekLabel(week: number): string {
 export function App() {
   const auth = useAuth();
   const { members, progress, loading, error, toggle } = useProgress();
-  const week = weekNumber(START_DATE, new Date());
+  const quizzes = useQuizzes();
+  const [quizItem, setQuizItem] = useState<RoadmapItem | null>(null);
+  const now = new Date();
+  const feed = useMemo(() => buildFeed(progress, quizzes.results), [progress, quizzes.results]);
+  const week = weekNumber(START_DATE, now);
   const current = phaseForWeek(PHASES, week);
   const me = auth.profile;
   const signedInNonMember = Boolean(auth.session) && !auth.loading && !me?.is_member;
@@ -42,9 +51,11 @@ export function App() {
         ) : members.length === 0 ? (
           <p className="muted">No one has signed in yet. Members appear here after their first GitHub sign-in.</p>
         ) : (
-          members.map((m) => <PersonCard key={m.id} member={m} done={progress[m.id]} isMe={m.id === me?.id} />)
+          members.map((m) => <PersonCard key={m.id} member={m} done={progress[m.id]} isMe={m.id === me?.id} now={now} />)
         )}
       </section>
+
+      {supabase && members.length > 0 && <ActivityFeed events={feed} members={members} now={now} />}
 
       <div className="layout">
         <nav className="rail" aria-label="Phases">
@@ -66,10 +77,14 @@ export function App() {
               progress={progress}
               me={me}
               onToggle={(itemId, done) => me && toggle(me.id, itemId, done)}
+              quizResults={quizzes.results}
+              onQuiz={me?.is_member ? setQuizItem : null}
             />
           ))}
         </main>
       </div>
+
+      {quizItem && <QuizDialog key={quizItem.id} item={quizItem} quizzes={quizzes} onClose={() => setQuizItem(null)} />}
 
       <footer className="foot">
         Built by TWadi, GhassenJamoussi99 and bravo421 · Hosted on GitHub Pages · Data in Supabase
