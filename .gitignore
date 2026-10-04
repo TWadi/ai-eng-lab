@@ -41,3 +41,6 @@ site/dist/
 .env.local
 *.tsbuildinfo
 .vite/
+
+# Local clones of course repos (not ours to publish)
+rag-for-beginners/
