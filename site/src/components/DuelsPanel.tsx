@@ -1,4 +1,4 @@
-import { findRoadmapItem, relativeTime } from "../activity";
+import { duelTitle, relativeTime } from "../activity";
 import { formatTime, viewDuel, type DuelState, type DuelView } from "../duels";
 import type { LabData } from "../lab";
 import { href } from "../route";
@@ -19,7 +19,6 @@ const LABEL: Record<DuelState, string> = {
 };
 
 function DuelRow({ v, data }: { readonly v: DuelView; readonly data: LabData }) {
-  const item = findRoadmapItem(v.duel.item_id);
   const rival = data.memberById(v.rivalId);
   const decided = v.state === "won" || v.state === "lost" || v.state === "draw";
   const at = v.duel.completed_at ?? v.duel.created_at;
@@ -32,8 +31,8 @@ function DuelRow({ v, data }: { readonly v: DuelView; readonly data: LabData }) 
           <span className={`duel-state state-${v.state}`}>{LABEL[v.state]}</span>
         </div>
         <div className="duel-sub">
-          {item?.title ?? v.duel.item_id}
-          {decided && v.mine?.score !== null && v.theirs?.score !== null && (
+          {duelTitle(v.duel)}
+          {decided && v.duel.kind === "quiz" && v.mine?.score !== null && v.theirs?.score !== null && (
             <> · <b>{v.mine?.score ?? "–"}–{v.theirs?.score ?? "–"}</b> ({formatTime(v.mine?.time_ms)} vs {formatTime(v.theirs?.time_ms)})</>
           )}
         </div>
@@ -68,7 +67,7 @@ export function DuelsPanel({ data }: { readonly data: LabData }) {
       </div>
       {urgent.length + recent.length === 0 ? (
         <p className="empty">
-          No duels yet. On the <a href={href({ page: "roadmap" })}>Roadmap</a>, hit <b>Duel</b> on any RAG video to challenge a friend. They get a notification, and once they accept you both play at the same moment.
+          No duels yet. On the <a href={href({ page: "roadmap" })}>Roadmap</a>, hit <b>Duel</b> on any RAG video to challenge a friend, or start a <a href={href({ page: "lab" })}>code race</a> in the Lab. They get a notification, and once they accept you both play at the same moment.
         </p>
       ) : (
         <ul className="duel-list">

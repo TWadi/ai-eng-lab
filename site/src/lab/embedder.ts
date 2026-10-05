@@ -17,10 +17,18 @@ export function embed(texts: readonly string[], onProgress: (pct: number) => voi
         return;
       }
       w.removeEventListener("message", onMessage);
+      w.removeEventListener("error", onCrash);
       if (msg.type === "result") resolve(msg.vectors as Vec[]);
       else reject(new Error(msg.error ?? "Embedding failed"));
     };
+    const onCrash = () => {
+      w.removeEventListener("message", onMessage);
+      w.removeEventListener("error", onCrash);
+      if (worker === w) worker = null;
+      reject(new Error("The worker crashed"));
+    };
     w.addEventListener("message", onMessage);
+    w.addEventListener("error", onCrash);
     w.postMessage({ id, texts });
   });
 }

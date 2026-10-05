@@ -20,7 +20,7 @@ export type ActivityEvent =
   | { readonly kind: "quiz"; readonly userId: string; readonly itemId: string; readonly at: string; readonly score: number; readonly total: number }
   /** userId is the winner (or the challenger in a draw). */
   | { readonly kind: "solve"; readonly userId: string; readonly itemId: string; readonly at: string; readonly challengeId: string; readonly title: string; readonly xp: number }
-  | { readonly kind: "duel"; readonly userId: string; readonly rivalId: string; readonly itemId: string; readonly at: string; readonly draw: boolean; readonly score: number | null; readonly rivalScore: number | null };
+  | { readonly kind: "duel"; readonly userId: string; readonly rivalId: string; readonly itemId: string; readonly at: string; readonly draw: boolean; readonly score: number | null; readonly rivalScore: number | null; readonly challengeId: string | null };
 
 export function findRoadmapItem(itemId: string): RoadmapItem | undefined {
   for (const phase of PHASES) {
@@ -28,6 +28,15 @@ export function findRoadmapItem(itemId: string): RoadmapItem | undefined {
     if (item) return item;
   }
   return undefined;
+}
+
+/** What a duel was about: the roadmap item of a quiz duel, or the challenge of a code race (once revealed). */
+export function duelTitle(d: Pick<Duel, "kind" | "item_id" | "challenge_id">): string {
+  if (d.kind === "code") {
+    const c = d.challenge_id ? findChallenge(d.challenge_id) : undefined;
+    return c ? `Code race: ${c.title}` : "Code race (mystery challenge)";
+  }
+  return (d.item_id && findRoadmapItem(d.item_id)?.title) || d.item_id || "a quiz";
 }
 
 /** Newest first. Items that are no longer on the roadmap are skipped. */
@@ -52,8 +61,11 @@ export function buildFeed(
       const userId = d.winner ?? d.challenger;
       const rivalId = userId === d.challenger ? d.opponent : d.challenger;
       return {
-        kind: "duel" as const, userId, rivalId, itemId: d.item_id, at: d.completed_at!, draw: d.winner === null,
-        score: scoreOf(d.id, userId), rivalScore: scoreOf(d.id, rivalId),
+        kind: "duel" as const, userId, rivalId, at: d.completed_at!, draw: d.winner === null,
+        // A race event hangs off its challenge's roadmap item.
+        itemId: d.kind === "code" ? findChallenge(d.challenge_id ?? "")?.item ?? "" : d.item_id ?? "",
+        challengeId: d.kind === "code" ? d.challenge_id : null,
+        score: d.kind === "code" ? null : scoreOf(d.id, userId), rivalScore: d.kind === "code" ? null : scoreOf(d.id, rivalId),
       };
     });
   const solved: ActivityEvent[] = solves.flatMap((s) => {

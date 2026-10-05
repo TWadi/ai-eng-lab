@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { embed } from "./embedder";
+import { RagAnswer } from "./RagAnswer";
 import { chunkText, cosine, pca2d, rank, type Vec } from "./vectors";
 
 const SAMPLE_SENTENCES = [
@@ -133,6 +134,7 @@ function MiniRag() {
   const [k, setK] = useState(3);
   const [question, setQuestion] = useState("How do we find the chunks that answer a question?");
   const [hits, setHits] = useState<Array<{ index: number; score: number; text: string }> | null>(null);
+  const [asked, setAsked] = useState("");
   const { load, run } = useEmbed();
 
   const chunks = (() => {
@@ -149,15 +151,16 @@ function MiniRag() {
     if (!vectors) return;
     const [q, ...docs] = vectors;
     setHits(rank(q, docs).map((r) => ({ ...r, text: chunks[r.index] })));
+    setAsked(question.trim());
   };
 
   return (
     <section className="panel" aria-labelledby="rag-title">
       <div className="panel-head">
-        <h2 id="rag-title" className="panel-title">Mini RAG retriever</h2>
+        <h2 id="rag-title" className="panel-title">Mini RAG: retrieve, then generate</h2>
         <span className="muted small-text">{chunks.length} chunks</span>
       </div>
-      <p className="muted">Paste any text, choose how to chunk it, ask a question, and see which chunks a retriever would hand to the LLM.</p>
+      <p className="muted">Paste any text, choose how to chunk it, ask a question, and see which chunks a retriever would hand to the LLM. Then let a small LLM in your browser write the answer from them.</p>
       <label className="sr-only" htmlFor="rag-doc">Document</label>
       <textarea id="rag-doc" className="lab-textarea" rows={6} value={doc} onChange={(e) => { setDoc(e.target.value); setHits(null); }} />
       <div className="rag-controls">
@@ -188,6 +191,13 @@ function MiniRag() {
           ))}
         </ol>
       )}
+      {hits && (
+        <RagAnswer
+          key={`${asked}|${hits.slice(0, k).map((h) => h.index).join(",")}`}
+          question={asked}
+          chunks={hits.slice(0, k).map((h) => h.text)}
+        />
+      )}
     </section>
   );
 }
@@ -196,7 +206,7 @@ export function Playground() {
   return (
     <div className="playground">
       <p className="banner info">
-        Everything here runs in your browser with transformers.js. The first run downloads a small model (about 23 MB) from Hugging Face; after that it's cached.
+        Everything here runs in your browser with transformers.js. The embedding model is small (about 23 MB); the optional answer step uses a ~500 MB LLM. Both download once from Hugging Face and are cached.
       </p>
       <SimilarityLab />
       <MiniRag />

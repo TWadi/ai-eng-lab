@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { findRoadmapItem, relativeTime } from "../activity";
+import { duelTitle, findRoadmapItem, relativeTime } from "../activity";
 import { duelRecord, formatTime, viewDuel } from "../duels";
 import { BADGES, xpTimeline } from "../gamify";
 import type { LabData } from "../lab";
@@ -143,7 +143,10 @@ export function ProfilePage({ data, username }: { readonly data: LabData; readon
                   <li key={v.duel.id}>
                     <span className={`duel-state state-${v.state}`}>{v.state === "won" ? "W" : v.state === "lost" ? "L" : "D"}</span>
                     <span className="history-title">
-                      vs <PlayerLink member={data.memberById(v.rivalId)} /> · {v.mine?.score ?? "?"}–{v.theirs?.score ?? "?"} · {formatTime(v.mine?.time_ms)}
+                      vs <PlayerLink member={data.memberById(v.rivalId)} /> ·{" "}
+                      {v.duel.kind === "code"
+                        ? <>{duelTitle(v.duel)} · {formatTime((v.state === "won" ? v.mine : v.theirs)?.time_ms)}</>
+                        : <>{v.mine?.score ?? "?"}–{v.theirs?.score ?? "?"} · {formatTime(v.mine?.time_ms)}</>}
                     </span>
                     <time dateTime={v.duel.completed_at ?? ""}>{relativeTime(v.duel.completed_at ?? v.duel.created_at, data.now)}</time>
                   </li>

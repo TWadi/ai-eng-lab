@@ -1,0 +1,115 @@
+/// <reference lib="webworker" />
+// Runs a small instruction-tuned LLM (Qwen2.5-0.5B-Instruct) in the browser with transformers.js.
+// WebGPU when the browser has it (fast, ~480 MB download); otherwise CPU via WebAssembly (slow, ~510 MB).
+// The weights download from Hugging Face once and are cached by the browser.
+
+import {
+  InterruptableStoppingCriteria,
+  pipeline,
+  TextStreamer,
+  type TextGenerationPipeline,
+} from "@huggingface/transformers";
+
+export const LLM_ID = "onnx-community/Qwen2.5-0.5B-Instruct";
+
+type Device = "webgpu" | "wasm";
+
+interface ChatMessage {
+  readonly role: "system" | "user" | "assistant";
+  readonly content: string;
+}
+
+type Incoming =
+  | { readonly type: "load"; readonly id: number }
+  | { readonly type: "generate"; readonly id: number; readonly messages: readonly ChatMessage[]; readonly maxTokens: number }
+  | { readonly type: "stop" };
+
+let generator: Promise<{ pipe: TextGenerationPipeline; device: Device }> | null = null;
+const stopper = new InterruptableStoppingCriteria();
+
+async function pickDevice(): Promise<{ device: Device; dtype: "q4f16" | "q4" | "q8" }> {
+  const gpu = (navigator as Navigator & { gpu?: { requestAdapter(): Promise<{ features: Set<string> } | null> } }).gpu;
+  if (gpu) {
+    try {
+      const adapter = await gpu.requestAdapter();
+      if (adapter) return { device: "webgpu", dtype: adapter.features.has("shader-f16") ? "q4f16" : "q4" };
+    } catch {
+      // No usable GPU: fall back to the CPU.
+    }
+  }
+  return { device: "wasm", dtype: "q8" };
+}
+
+async function create(id: number, device: Device, dtype: "q4f16" | "q4" | "q8"): Promise<TextGenerationPipeline> {
+  self.postMessage({ id, type: "device", device });
+  return (await pipeline("text-generation", LLM_ID, {
+    device,
+    dtype,
+    progress_callback: (p: { status: string; progress?: number }) => {
+      if (p.status === "progress_total" && typeof p.progress === "number") {
+        self.postMessage({ id, type: "progress", progress: p.progress });
+      }
+    },
+  })) as TextGenerationPipeline;
+}
+
+function load(id: number) {
+  generator ??= (async () => {
+    const { device, dtype } = await pickDevice();
+    if (device === "wasm") return { pipe: await create(id, "wasm", "q8"), device };
+    try {
+      return { pipe: await create(id, device, dtype), device };
+    } catch (err) {
+      // A GPU that looked usable can still fail to start the model: fall back to the CPU.
+      console.warn("WebGPU failed, falling back to WebAssembly", err);
+      return { pipe: await create(id, "wasm", "q8"), device: "wasm" as const };
+    }
+  })();
+  generator.catch(() => {
+    generator = null;
+  });
+  return generator;
+}
+
+// One model, one generation at a time: requests queue up behind each other.
+let queue: Promise<void> = Promise.resolve();
+
+self.onmessage = (event: MessageEvent<Incoming>) => {
+  const msg = event.data;
+  if (msg.type === "stop") {
+    stopper.interrupt();
+    return;
+  }
+  queue = queue.then(() => handle(msg));
+};
+
+async function handle(msg: Exclude<Incoming, { type: "stop" }>): Promise<void> {
+  const { id } = msg;
+  try {
+    const { pipe, device } = await load(id);
+    if (msg.type === "load") {
+      // Sent on every load (not just the first), so a remounted page still learns the device.
+      self.postMessage({ id, type: "ready", device });
+      return;
+    }
+    stopper.reset();
+    let text = "";
+    const streamer = new TextStreamer(pipe.tokenizer, {
+      skip_prompt: true,
+      skip_special_tokens: true,
+      callback_function: (piece: string) => {
+        text += piece;
+        self.postMessage({ id, type: "token", text });
+      },
+    });
+    await pipe([...msg.messages], {
+      max_new_tokens: msg.maxTokens,
+      do_sample: false,
+      streamer,
+      stopping_criteria: stopper,
+    });
+    self.postMessage({ id, type: "done", text });
+  } catch (err) {
+    self.postMessage({ id, type: "error", error: err instanceof Error ? err.message : String(err) });
+  }
+}

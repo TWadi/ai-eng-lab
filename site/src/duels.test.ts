@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { activeDuel, duelRecord, duelXp, formatTime, viewDuel, type Duel } from "./duels";
+import { activeDuel, duelLimitMs, duelRecord, duelXp, formatTime, viewDuel, type Duel } from "./duels";
+import { buildFeed, duelTitle } from "./activity";
+import { CHALLENGES } from "./lab/challenges";
 import { playerStats, xpTimeline } from "./gamify";
 
 const now = new Date("2026-10-14T12:00:00Z");
 const duel = (over: Partial<Duel>): Duel => ({
-  id: "d1", item_id: "rag-1", challenger: "a", opponent: "b", status: "pending", winner: null,
+  id: "d1", kind: "quiz", item_id: "rag-1", challenge_id: null, challenger: "a", opponent: "b", status: "pending", winner: null,
   created_at: "2026-10-14T11:58:00Z", completed_at: null, starts_at: null, ...over,
 });
 
@@ -93,5 +95,36 @@ describe("xpTimeline", () => {
 
   it("is empty for a new player", () => {
     expect(xpTimeline("nobody", {}, [])).toEqual([]);
+  });
+});
+
+describe("code races", () => {
+  const race = (over: Partial<Duel>): Duel => duel({ kind: "code", item_id: null, ...over });
+  const challenge = CHALLENGES[0];
+
+  it("get 15 minutes instead of 2", () => {
+    expect(duelLimitMs(race({}))).toBe(15 * 60_000);
+    expect(duelLimitMs(duel({}))).toBe(120_000);
+  });
+
+  it("keep the challenge a mystery until it's revealed", () => {
+    expect(duelTitle(race({}))).toBe("Code race (mystery challenge)");
+    expect(duelTitle(race({ challenge_id: challenge.id }))).toBe(`Code race: ${challenge.title}`);
+    expect(duelTitle(duel({}))).not.toMatch(/race/i);
+  });
+
+  it("count as wins and give the speed-coder badge", () => {
+    const won = race({ status: "done", winner: "a", challenge_id: challenge.id, completed_at: "2026-10-14T11:59:30Z" });
+    expect(duelXp("a", won)).toBe(15);
+    const stats = playerStats("a", {}, [], now, [won]);
+    expect(stats.duelWins).toBe(1);
+    expect(stats.badges.has("speed-coder")).toBe(true);
+    expect(playerStats("b", {}, [], now, [won]).badges.has("speed-coder")).toBe(false);
+  });
+
+  it("show in the feed under the challenge, without a quiz score", () => {
+    const won = race({ status: "done", winner: "b", challenge_id: challenge.id, completed_at: "2026-10-14T11:59:30Z" });
+    const [event] = buildFeed({}, [], 10, [won], []);
+    expect(event).toMatchObject({ kind: "duel", userId: "b", rivalId: "a", itemId: challenge.item, challengeId: challenge.id, score: null });
   });
 });

@@ -93,7 +93,7 @@ export function DuelArena({ duel, me, rival, itemTitle, duels, entries, colorOf,
       const wait = Math.max(0, res.value.startsAt - (Date.now() + res.value.serverOffset)) + 150;
       window.clearTimeout(retryRef.current);
       retryRef.current = window.setTimeout(() => void load(), wait);
-    } else {
+    } else if (res.value.kind === "play") {
       const { questions, endsAt } = res.value;
       setAnswers((cur) => (cur.length === questions.length ? cur : questions.map(() => null)));
       setPhase({ name: "playing", endsAt, questions });
