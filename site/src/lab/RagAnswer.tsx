@@ -13,7 +13,7 @@ type Status =
   | { readonly name: "generating" }
   | { readonly name: "error"; readonly message: string };
 
-const MAX_TOKENS = 200;
+const MAX_TOKENS = 160;
 
 /** The "G" in RAG: a small LLM running in the browser writes an answer from the retrieved chunks. */
 export function RagAnswer({ question, chunks }: Props) {
@@ -50,7 +50,7 @@ export function RagAnswer({ question, chunks }: Props) {
         <div>
           <h3>Generate the answer</h3>
           <p className="muted small-text">
-            Qwen2.5-0.5B-Instruct, running in your browser. First use downloads about 500 MB (cached after that).
+            Qwen2.5-0.5B-Instruct, running in your browser. First use downloads about 800 MB on a GPU or 500 MB on CPU (cached after that), so try it on Wi-Fi.
             {device && <> Running on <b>{device === "webgpu" ? "your GPU (WebGPU)" : "your CPU (slower)"}</b>.</>}
           </p>
         </div>
@@ -65,7 +65,7 @@ export function RagAnswer({ question, chunks }: Props) {
 
       {status.name === "loading" && (
         <div className="model-load" role="status">
-          <span>{status.pct === null ? "Starting the model…" : `Downloading the model (first time only)… ${status.pct}%`}</span>
+          <span>{status.pct === null ? "Starting the model…" : `Loading the model (downloads the first time only)… ${status.pct}%`}</span>
           {status.pct !== null && <span className="load-bar"><i style={{ width: `${status.pct}%` }} /></span>}
         </div>
       )}

@@ -1,6 +1,8 @@
 /// <reference lib="webworker" />
 // Runs a small instruction-tuned LLM (Qwen2.5-0.5B-Instruct) in the browser with transformers.js.
-// WebGPU when the browser has it (fast, ~480 MB download); otherwise CPU via WebAssembly (slow, ~510 MB).
+// WebGPU when the browser has it (~790 MB download); otherwise CPU via WebAssembly (slower, ~510 MB).
+// On WebGPU we use 4-bit weights with fp32 math ("q4"): the smaller fp16 build ("q4f16") produced gibberish
+// on longer prompts on some GPUs.
 // The weights download from Hugging Face once and are cached by the browser.
 
 import {
@@ -27,12 +29,11 @@ type Incoming =
 let generator: Promise<{ pipe: TextGenerationPipeline; device: Device }> | null = null;
 const stopper = new InterruptableStoppingCriteria();
 
-async function pickDevice(): Promise<{ device: Device; dtype: "q4f16" | "q4" | "q8" }> {
-  const gpu = (navigator as Navigator & { gpu?: { requestAdapter(): Promise<{ features: Set<string> } | null> } }).gpu;
+async function pickDevice(): Promise<{ device: Device; dtype: "q4" | "q8" }> {
+  const gpu = (navigator as Navigator & { gpu?: { requestAdapter(): Promise<unknown> } }).gpu;
   if (gpu) {
     try {
-      const adapter = await gpu.requestAdapter();
-      if (adapter) return { device: "webgpu", dtype: adapter.features.has("shader-f16") ? "q4f16" : "q4" };
+      if (await gpu.requestAdapter()) return { device: "webgpu", dtype: "q4" };
     } catch {
       // No usable GPU: fall back to the CPU.
     }
@@ -40,7 +41,7 @@ async function pickDevice(): Promise<{ device: Device; dtype: "q4f16" | "q4" | "
   return { device: "wasm", dtype: "q8" };
 }
 
-async function create(id: number, device: Device, dtype: "q4f16" | "q4" | "q8"): Promise<TextGenerationPipeline> {
+async function create(id: number, device: Device, dtype: "q4" | "q8"): Promise<TextGenerationPipeline> {
   self.postMessage({ id, type: "device", device });
   return (await pipeline("text-generation", LLM_ID, {
     device,

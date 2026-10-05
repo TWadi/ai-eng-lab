@@ -206,7 +206,7 @@ export function Playground() {
   return (
     <div className="playground">
       <p className="banner info">
-        Everything here runs in your browser with transformers.js. The embedding model is small (about 23 MB); the optional answer step uses a ~500 MB LLM. Both download once from Hugging Face and are cached.
+        Everything here runs in your browser with transformers.js. The embedding model is small (about 23 MB); the optional answer step uses a 500–800 MB LLM. Both download once from Hugging Face and are cached.
       </p>
       <SimilarityLab />
       <MiniRag />
