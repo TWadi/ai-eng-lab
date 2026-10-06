@@ -1,21 +1,21 @@
 -- Invite players from the site. Being a site member has nothing to do with the GitHub repo:
 -- GitHub is only used to sign in, and members never get repo access from this.
 --
--- Admins (TWadi to start) can:
+-- Admins (TWadi and GhassenJamoussi99) can:
 --   * see who signed in but isn't a player yet (lab_admin_overview)
 --   * let a GitHub user in, before or after they first sign in (invite_player)
 --   * remove a player (remove_player); their history stays in the database but is hidden
 -- Nobody can make themselves an admin: profiles has no update policy.
 
 alter table public.profiles add column if not exists is_admin boolean not null default false;
-update public.profiles set is_admin = true where lower(github_username) = 'twadi';
+update public.profiles set is_admin = true where lower(github_username) in ('twadi', 'ghassenjamoussi99');
 
 -- Keep the founders' admin flag even if their profile is created later.
 create table if not exists public.admins (
   github_username text primary key
 );
 alter table public.admins enable row level security;  -- no policies: the API can't read or write it
-insert into public.admins (github_username) values ('TWadi') on conflict do nothing;
+insert into public.admins (github_username) values ('TWadi'), ('GhassenJamoussi99') on conflict do nothing;
 
 create or replace function public.handle_new_user()
 returns trigger

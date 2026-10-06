@@ -46,7 +46,7 @@ export function PlayersPanel({ data }: { readonly data: LabData }) {
     <section className="panel players-panel" aria-labelledby="players-title">
       <div className="panel-head">
         <h2 id="players-title" className="panel-title">Players</h2>
-        <span className="admin-tag">Only you see this</span>
+        <span className="admin-tag">Admins only</span>
       </div>
       <p className="muted small-text">
         Players can tick quests, take quizzes, duel and race, and they show up on the leaderboard.

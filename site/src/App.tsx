@@ -146,7 +146,7 @@ export function App() {
         {!supabase && <p className="banner">Progress tracking isn't connected. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY (see site/README.md).</p>}
         {signedInNonMember && (
           <p className="banner">
-            You're signed in. To play (tick quests, take quizzes, duel), ask TWadi to let you in. This page unlocks by itself once you're in. Until then you can watch the board.
+            You're signed in. To play (tick quests, take quizzes, duel), ask TWadi or Ghassen to let you in. This page unlocks by itself once you're in. Until then you can watch the board.
           </p>
         )}
         {auth.error && <p className="banner error" role="alert">{auth.error}</p>}
