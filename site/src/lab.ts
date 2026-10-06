@@ -5,6 +5,7 @@ import type { RoadmapItem } from "./roadmap";
 import type { Profile } from "./supabase";
 import type { Duel, DuelEntry } from "./duels";
 import type { ChallengeSolve } from "./hooks/useSolves";
+import type { Outcome } from "./hooks/useQuizzes";
 
 /** Everything the pages need, computed once in App. */
 export interface LabData {
@@ -30,6 +31,8 @@ export interface LabData {
   readonly solves: readonly ChallengeSolve[];
   /** Called when the signed-in member passes every test of a challenge. */
   readonly onSolved: ((challengeId: string) => void) | null;
+  /** Challenge a member to a code race on a random challenge (members only). */
+  readonly onRace: ((opponentId: string) => Promise<Outcome<string>>) | null;
 }
 
 export const PLAYER_COLORS = ["var(--cobalt)", "var(--tomato)", "var(--mint)", "var(--sun)", "var(--pink)"] as const;

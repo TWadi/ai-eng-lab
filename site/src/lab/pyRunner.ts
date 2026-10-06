@@ -13,6 +13,12 @@ function spawn(): Worker {
   return worker;
 }
 
+/** Start downloading Python in the background (e.g. while a race counts down). Safe to call repeatedly. */
+export function preloadPython(): void {
+  const w = worker ?? spawn();
+  w.postMessage({ id: nextId++, harnessUrl: `${import.meta.env.BASE_URL}harness.py` });
+}
+
 /** Run code against tests in a worker. If it hangs, the worker is killed and the next run starts fresh. */
 export function runChallenge(
   code: string,
@@ -28,6 +34,7 @@ export function runChallenge(
     const finish = (r: RunResult) => {
       window.clearTimeout(timer);
       w.removeEventListener("message", onMessage);
+      w.removeEventListener("error", onCrash);
       onState("idle");
       resolve(r);
     };
@@ -49,7 +56,13 @@ export function runChallenge(
         finish({ error: `Python couldn't start: ${msg.error}`, stdout: "", results: [] });
       }
     };
+    // The worker died (e.g. out of memory): start a fresh one next time.
+    const onCrash = () => {
+      if (worker === w) worker = null;
+      finish({ error: "Python crashed (maybe out of memory). Run again to restart it.", stdout: "", results: [] });
+    };
     w.addEventListener("message", onMessage);
+    w.addEventListener("error", onCrash);
     w.postMessage({ id, code, tests: JSON.stringify(tests.map(({ name, code: c }) => ({ name, code: c }))), harnessUrl });
   });
 }

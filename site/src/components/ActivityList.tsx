@@ -5,6 +5,7 @@ import type { LabData } from "../lab";
 import { href } from "../route";
 import { Avatar } from "./Avatar";
 import type { Profile } from "../supabase";
+import { findChallenge } from "../lab/challenges";
 
 export function PlayerLink({ member }: { readonly member: Profile | undefined }) {
   if (!member) return <b>Someone</b>;
@@ -44,10 +45,11 @@ export function ActivityList({ events, data }: Props) {
               ) : (
                 <>
                   {e.draw ? "drew with" : "beat"} <PlayerLink member={data.memberById(e.rivalId)} />{" "}
-                  {e.score !== null && e.rivalScore !== null && <span className="score duel-score">{e.score}–{e.rivalScore}</span>} in a duel on
+                  {e.score !== null && e.rivalScore !== null && <span className="score duel-score">{e.score}–{e.rivalScore}</span>}
+                  {e.challengeId ? <> in a code race on <a href={href({ page: "lab", lab: e.challengeId })}>{findChallenge(e.challengeId)?.title ?? e.challengeId}</a></> : " in a duel on"}
                 </>
               )}{" "}
-              {e.kind !== "solve" && <a href={href({ page: "roadmap", phase })}>{item?.title ?? e.itemId}</a>}
+              {e.kind !== "solve" && !(e.kind === "duel" && e.challengeId) && <a href={href({ page: "roadmap", phase })}>{item?.title ?? e.itemId}</a>}
             </span>
             <span className="feed-side">
               <span className="xp-chip">+{eventXp(e)} XP</span>

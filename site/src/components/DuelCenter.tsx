@@ -1,10 +1,13 @@
-import { useEffect, useRef, useState } from "react";
-import { findRoadmapItem } from "../activity";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { duelTitle } from "../activity";
 import { activeDuel, INVITE_TTL_MS, type Duel } from "../duels";
 import type { DuelsState } from "../hooks/useDuels";
 import type { Profile } from "../supabase";
 import { Avatar } from "./Avatar";
 import { DuelArena } from "./DuelArena";
+
+// The race arena brings the code editor and Python runner, so it loads only when a race starts.
+const RaceArena = lazy(() => import("../lab/RaceArena"));
 
 interface Props {
   readonly me: Profile;
@@ -16,6 +19,7 @@ interface Props {
   readonly onHide: (duelId: string) => void;
   readonly onToast: (title: string, body: string) => void;
   readonly onWin: () => void;
+  readonly onSolved: ((challengeId: string) => void) | null;
 }
 
 function useNow(ms: number): number {
@@ -41,11 +45,11 @@ function notify(title: string, body: string): void {
 }
 
 function itemTitle(duel: Duel): string {
-  return findRoadmapItem(duel.item_id)?.title ?? "a quiz";
+  return duel.kind === "code" ? "a code race" : duelTitle(duel);
 }
 
 /** Shows whatever duel needs the user right now: an incoming challenge, a sent challenge, or the live arena. */
-export function DuelCenter({ me, duels, memberById, colorOf, hidden, onHide, onToast, onWin }: Props) {
+export function DuelCenter({ me, duels, memberById, colorOf, hidden, onHide, onToast, onWin, onSolved }: Props) {
   const now = useNow(1000);
   const current = activeDuel(duels.duels, duels.entries, me.id, new Date(now));
   // The arena stays open after the duel ends so both players see the result.
@@ -75,7 +79,7 @@ export function DuelCenter({ me, duels, memberById, colorOf, hidden, onHide, onT
       const rival = memberById(d.challenger === me.id ? d.opponent : d.challenger);
       const name = rival?.display_name || rival?.github_username || "Someone";
       if (d.status === "pending" && d.opponent === me.id && before === undefined) {
-        notify(`${name} challenges you to a duel!`, `${itemTitle(d)} · open the lab to accept`);
+        notify(`${name} challenges you to a ${d.kind === "code" ? "code race" : "duel"}!`, `${itemTitle(d)} · open the lab to accept`);
         document.title = "(!) Duel challenge · AI Engineering Lab";
       } else if (d.status === "live" && d.challenger === me.id) {
         notify(`${name} accepted your duel!`, "It starts in 5 seconds. Jump in!");
@@ -98,8 +102,32 @@ export function DuelCenter({ me, duels, memberById, colorOf, hidden, onHide, onT
   };
 
   const arenaDuel = arenaId ? duels.duels.find((d) => d.id === arenaId) : undefined;
-  if (arenaDuel && (arenaDuel.status === "live" || arenaDuel.status === "done")) {
+  // A race that nobody solved ends as "expired"; keep its arena open so both see the outcome.
+  const arenaOpen = arenaDuel && (arenaDuel.status === "live" || arenaDuel.status === "done" || (arenaDuel.kind === "code" && arenaDuel.status === "expired"));
+  if (arenaDuel && arenaOpen) {
     const rivalId = arenaDuel.challenger === me.id ? arenaDuel.opponent : arenaDuel.challenger;
+    const close = () => {
+      if (arenaDuel.status === "live") onHide(arenaDuel.id);
+      setArenaId(null);
+    };
+    if (arenaDuel.kind === "code") {
+      return (
+        <Suspense fallback={<div className="waiting-chip" role="status"><b>Loading the race…</b></div>}>
+          <RaceArena
+            key={arenaDuel.id}
+            duel={arenaDuel}
+            me={me}
+            rival={memberById(rivalId)}
+            duels={duels}
+            entries={duels.entries}
+            colorOf={colorOf}
+            onClose={close}
+            onWin={onWin}
+            onSolved={onSolved}
+          />
+        </Suspense>
+      );
+    }
     return (
       <DuelArena
         key={arenaDuel.id}
@@ -110,10 +138,7 @@ export function DuelCenter({ me, duels, memberById, colorOf, hidden, onHide, onT
         duels={duels}
         entries={duels.entries}
         colorOf={colorOf}
-        onClose={() => {
-          if (arenaDuel.status === "live") onHide(arenaDuel.id);
-          setArenaId(null);
-        }}
+        onClose={close}
         onWin={onWin}
       />
     );
@@ -130,10 +155,14 @@ export function DuelCenter({ me, duels, memberById, colorOf, hidden, onHide, onT
       <div className="invite" role="alertdialog" aria-labelledby="invite-title" aria-describedby="invite-body">
         <div className="invite-card">
           <Avatar member={rival} size={64} color={colorOf(current.rivalId)} />
-          <p className="eyebrow">Duel challenge · {left} to answer</p>
+          <p className="eyebrow">{current.duel.kind === "code" ? "Code race" : "Duel challenge"} · {left} to answer</p>
           <h2 id="invite-title">{rivalName} challenges you!</h2>
           <p id="invite-body" className="muted">
-            5 questions on <b>{itemTitle(current.duel)}</b>. You both start at the same moment and have 2 minutes. Best score wins, and if it's a tie, the faster player wins.
+            {current.duel.kind === "code" ? (
+              <>A random coding challenge, revealed when you both start. You have 15 minutes, and the first to pass every test wins.</>
+            ) : (
+              <>5 questions on <b>{itemTitle(current.duel)}</b>. You both start at the same moment and have 2 minutes. Best score wins, and if it's a tie, the faster player wins.</>
+            )}
           </p>
           {error && <p className="form-error" role="alert">{error}</p>}
           <div className="invite-actions">
