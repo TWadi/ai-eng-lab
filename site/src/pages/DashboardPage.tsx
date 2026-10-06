@@ -9,6 +9,7 @@ import { BadgeCabinet } from "../components/BadgeCabinet";
 import { PlayerCard } from "../components/PlayerCard";
 import { QuestRow } from "../components/QuestRow";
 import { DuelsPanel } from "../components/DuelsPanel";
+import { PlayersPanel } from "../components/PlayersPanel";
 
 function weekLine(now: Date): string {
   const week = weekNumber(START_DATE, now);
@@ -32,7 +33,7 @@ export function DashboardPage({ data }: { readonly data: LabData }) {
           <p className="eyebrow">{weekLine(now)}</p>
           <h1>Level up together.</h1>
           <p className="lede">
-            Three friends on a 40-week run from Python basics to shipping AI agents. Finish quests, ace quizzes, keep your streak alive.
+            Friends on a 40-week run from Python basics to shipping AI agents. Finish quests, ace quizzes, keep your streak alive.
           </p>
           <div className="hero-actions">
             <a className="btn btn-primary btn-big" href={href({ page: "roadmap", phase: current.id })}>Continue: {current.title}</a>
@@ -97,6 +98,8 @@ export function DashboardPage({ data }: { readonly data: LabData }) {
       <DuelsPanel data={data} />
 
       <BadgeCabinet data={data} />
+
+      <PlayersPanel data={data} />
     </div>
   );
 }

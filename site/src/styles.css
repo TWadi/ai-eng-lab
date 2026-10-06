@@ -681,3 +681,24 @@ dialog.arena.race { width: min(1180px, calc(100vw - 24px)); }
   .hit-head { grid-template-columns: auto auto minmax(40px, 1fr) auto; }
   .hit-head .solved-pill { grid-column: 1 / -1; justify-self: start; }
 }
+
+/* Players (admin) */
+.players-panel { margin-top: 22px; display: grid; gap: 10px; box-shadow: 6px 6px 0 var(--sun); }
+.players-panel .panel-head { margin-bottom: 0; }
+.players-panel p { margin: 0; }
+.admin-tag { font: 600 11px var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; background: var(--sun); color: #17183a; border: 2px solid var(--edge); border-radius: 999px; padding: 1px 10px; }
+.invite-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
+.players-ok { color: var(--mint); font-weight: 700; }
+.players-sub { margin: 8px 0 0; font-family: var(--font-display); font-weight: 400; font-size: 20px; display: flex; align-items: center; gap: 8px; }
+.player-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.player-rows li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 8px 10px; border: 2px solid var(--dots); border-radius: 14px; background: var(--card-2); }
+.player-row-name { display: grid; min-width: 0; }
+.player-row-name b, .player-row-name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.remove-confirm { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; font-size: 14px; }
+.invited-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.invited-chips li { display: inline-flex; align-items: center; gap: 4px; font: 600 13px var(--font-mono); padding: 3px 4px 3px 12px; border: 2px dashed var(--edge); border-radius: 999px; }
+.chip-x { width: 22px; height: 22px; border: 0; border-radius: 999px; background: none; color: var(--muted); font-size: 16px; line-height: 1; cursor: pointer; }
+.chip-x:hover:not(:disabled) { background: var(--tomato); color: #fff; }
+@media (max-width: 560px) {
+  .invite-form { grid-template-columns: 1fr; }
+}

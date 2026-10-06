@@ -32,7 +32,7 @@ interface Toast {
 
 export function App() {
   const auth = useAuth();
-  const { members, progress, loading, error, toggle } = useProgress();
+  const { members, progress, loading, error, toggle, reloadMembers } = useProgress();
   const quizzes = useQuizzes();
   const duels = useDuels();
   const solveState = useSolves();
@@ -129,6 +129,7 @@ export function App() {
     onDuel: me?.is_member ? setChallengeItem : null,
     onPlayDuel: me?.is_member ? showInvite : null,
     solves: solveState.solves,
+    onPlayersChanged: reloadMembers,
     onSolved: me?.is_member ? onSolved : null,
     onRace: me?.is_member ? duels.createRace : null,
   };
@@ -144,7 +145,11 @@ export function App() {
 
       <main className="wrap" id="main">
         {!supabase && <p className="banner">Progress tracking isn't connected. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY (see site/README.md).</p>}
-        {signedInNonMember && <p className="banner">You're signed in, but only lab members can play. You can still watch the board.</p>}
+        {signedInNonMember && (
+          <p className="banner">
+            You're signed in. To play (tick quests, take quizzes, duel), ask TWadi or Ghassen to let you in. This page unlocks by itself once you're in. Until then you can watch the board.
+          </p>
+        )}
         {auth.error && <p className="banner error" role="alert">{auth.error}</p>}
         {error && <p className="banner error" role="alert">{error}</p>}
 

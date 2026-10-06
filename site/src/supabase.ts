@@ -12,4 +12,6 @@ export interface Profile {
   readonly display_name: string | null;
   readonly avatar_url: string | null;
   readonly is_member: boolean;
+  /** Can invite and remove players (see the player_invites migration). */
+  readonly is_admin?: boolean;
 }

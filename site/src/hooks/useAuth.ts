@@ -59,6 +59,29 @@ export function useAuth(): AuthState {
     };
   }, []);
 
+  // When an admin lets this user in, their profile becomes readable: pick it up without a reload.
+  const userId = session?.user.id ?? null;
+  useEffect(() => {
+    const client = supabase;
+    if (!client || !userId) return;
+    let active = true;
+    const refresh = async () => {
+      const p = await loadProfile(userId);
+      if (active) setProfile(p);
+    };
+    const channel = client
+      .channel(`my-profile-${userId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "profiles", filter: `id=eq.${userId}` }, () => void refresh())
+      .subscribe();
+    // Fallback in case realtime is unavailable: check every 20 s while waiting to be let in.
+    const t = profile?.is_member ? undefined : window.setInterval(() => void refresh(), 20_000);
+    return () => {
+      active = false;
+      window.clearInterval(t);
+      client.removeChannel(channel);
+    };
+  }, [userId, profile?.is_member]);
+
   const signIn = async () => {
     if (!supabase) return;
     const redirectTo = window.location.origin + import.meta.env.BASE_URL;
