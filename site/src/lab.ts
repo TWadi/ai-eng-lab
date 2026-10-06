@@ -28,6 +28,8 @@ export interface LabData {
   /** Open a duel to play it. */
   readonly onPlayDuel: ((duelId: string) => void) | null;
   readonly solves: readonly ChallengeSolve[];
+  /** Re-read the player list after an admin invites or removes someone. */
+  readonly onPlayersChanged: () => void;
   /** Called when the signed-in member passes every test of a challenge. */
   readonly onSolved: ((challengeId: string) => void) | null;
 }

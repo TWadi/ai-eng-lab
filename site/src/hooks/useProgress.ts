@@ -8,6 +8,8 @@ export interface ProgressState {
   readonly loading: boolean;
   readonly error: string | null;
   readonly toggle: (userId: string, itemId: string, done: boolean) => Promise<void>;
+  /** Re-read the player list (e.g. after an admin let someone in). */
+  readonly reloadMembers: () => Promise<void>;
 }
 
 export function useProgress(): ProgressState {
@@ -17,6 +19,13 @@ export function useProgress(): ProgressState {
   const [error, setError] = useState<string | null>(null);
   const progressRef = useRef(progress);
   progressRef.current = progress;
+
+  const reloadMembers = useCallback(async () => {
+    if (!supabase) return;
+    const { data, error: err } = await supabase.from("profiles").select("*").order("created_at");
+    if (err) console.error("Failed to reload players", err);
+    else setMembers(data as Profile[]);
+  }, []);
 
   useEffect(() => {
     const client = supabase;
@@ -55,11 +64,18 @@ export function useProgress(): ProgressState {
       })
       .subscribe();
 
+    // A player was let in (or removed): refresh the board.
+    const players = client
+      .channel("player-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, () => void reloadMembers())
+      .subscribe();
+
     return () => {
       active = false;
       client.removeChannel(channel);
+      client.removeChannel(players);
     };
-  }, []);
+  }, [reloadMembers]);
 
   const toggle = useCallback(async (userId: string, itemId: string, done: boolean) => {
     if (!supabase) return;
@@ -80,5 +96,5 @@ export function useProgress(): ProgressState {
     }
   }, []);
 
-  return { members, progress, loading, error, toggle };
+  return { members, progress, loading, error, toggle, reloadMembers };
 }
