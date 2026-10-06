@@ -30,7 +30,7 @@ export const LEVEL_TITLES = [
 
 export type BadgeId =
   | "first-step" | "hat-trick" | "week-warrior" | "on-fire" | "quiz-whiz"
-  | "perfectionist" | "builder" | "phase-finisher" | "rag-master" | "duelist" | "coder";
+  | "perfectionist" | "builder" | "phase-finisher" | "rag-master" | "duelist" | "coder" | "speed-coder";
 
 export interface BadgeDef {
   readonly id: BadgeId;
@@ -48,8 +48,9 @@ export const BADGES: readonly BadgeDef[] = [
   { id: "builder", name: "Builder", description: "Finish 3 build items" },
   { id: "phase-finisher", name: "Phase Finisher", description: "Complete a whole phase" },
   { id: "rag-master", name: "RAG Master", description: "Finish every RAG video" },
-  { id: "duelist", name: "Duelist", description: "Win a quiz duel" },
+  { id: "duelist", name: "Duelist", description: "Win a duel or a code race" },
   { id: "coder", name: "Coder", description: "Solve 3 coding challenges" },
+  { id: "speed-coder", name: "Speed Coder", description: "Win a code race" },
 ];
 
 export interface LevelInfo {
@@ -157,6 +158,7 @@ export function playerStats(
     phasesComplete.includes("rag") && "rag-master",
     duelWins >= 1 && "duelist",
     mySolves.length >= 3 && "coder",
+    duels.some((d) => d.kind === "code" && d.status === "done" && d.winner === userId) && "speed-coder",
   ].filter((b): b is BadgeId => Boolean(b));
 
   return {

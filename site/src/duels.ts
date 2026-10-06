@@ -1,8 +1,15 @@
 export type DuelStatus = "pending" | "live" | "done" | "declined" | "cancelled" | "expired";
 
+export type DuelKind = "quiz" | "code";
+
 export interface Duel {
   readonly id: string;
-  readonly item_id: string;
+  /** "quiz": 5 questions on a roadmap item. "code": a race on a coding challenge. */
+  readonly kind: DuelKind;
+  /** The roadmap item of a quiz duel (null for code races). */
+  readonly item_id: string | null;
+  /** The challenge of a code race, revealed once it's decided. */
+  readonly challenge_id: string | null;
   readonly challenger: string;
   readonly opponent: string;
   readonly status: DuelStatus;
@@ -27,6 +34,11 @@ export const DUEL_XP = { win: 15, draw: 5 } as const;
 export const INVITE_TTL_MS = 5 * 60_000;
 export const DUEL_LIMIT_MS = 120_000;
 export const DUEL_GRACE_MS = 15_000;
+export const RACE_LIMIT_MS = 15 * 60_000;
+
+export function duelLimitMs(duel: Pick<Duel, "kind">): number {
+  return duel.kind === "code" ? RACE_LIMIT_MS : DUEL_LIMIT_MS;
+}
 
 export type DuelState =
   | "invite-in" | "invite-out" | "live"

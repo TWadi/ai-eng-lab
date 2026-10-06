@@ -5,6 +5,24 @@ import { Avatar } from "../components/Avatar";
 import { CHALLENGES, findChallenge } from "./challenges";
 import { ChallengeView } from "./ChallengeView";
 import { Playground } from "./Playground";
+import { RacePanel } from "./RacePanel";
+import { Scratchpad } from "./Scratchpad";
+import { TokenizerLab } from "./TokenizerLab";
+
+/** Lab sub-pages besides challenges (their ids can't be challenge ids). */
+const TABS = [
+  { id: "", label: "Coding challenges" },
+  { id: "scratchpad", label: "Python scratchpad" },
+  { id: "playground", label: "Embeddings & RAG" },
+  { id: "tokenizer", label: "Tokenizers" },
+] as const;
+
+type TabId = (typeof TABS)[number]["id"];
+
+function tabOf(sub: string | undefined): TabId | null {
+  const found = TABS.find((t) => t.id === (sub ?? ""));
+  return found ? found.id : null;
+}
 
 function ChallengeList({ data }: { readonly data: LabData }) {
   const mine = new Set(data.me ? data.solves.filter((s) => s.user_id === data.me!.id).map((s) => s.challenge_id) : []);
@@ -34,8 +52,8 @@ function ChallengeList({ data }: { readonly data: LabData }) {
 }
 
 export default function LabPage({ data, sub }: { readonly data: LabData; readonly sub?: string }) {
-  const challenge = sub && sub !== "playground" ? findChallenge(sub) : undefined;
-  const tab = sub === "playground" ? "playground" : "challenges";
+  const tab = tabOf(sub);
+  const challenge = tab === null && sub ? findChallenge(sub) : undefined;
 
   return (
     <div className="page lab">
@@ -44,11 +62,12 @@ export default function LabPage({ data, sub }: { readonly data: LabData; readonl
           <p className="eyebrow">Hands-on</p>
           <h1>The Lab</h1>
           <p className="lede">
-            Write real Python in your browser and see it graded instantly, or play with a real embedding model. Nothing to install, nothing to pay.
+            Solve graded Python challenges, race a friend, experiment in a notebook, and poke at real embedding models, tokenizers and a local LLM. All in your browser, nothing to install, nothing to pay.
           </p>
           <nav className="lab-tabs" aria-label="Lab sections">
-            <a href={href({ page: "lab" })} aria-current={tab === "challenges" ? "page" : undefined}>Coding challenges</a>
-            <a href={href({ page: "lab", lab: "playground" })} aria-current={tab === "playground" ? "page" : undefined}>Embeddings playground</a>
+            {TABS.map((t) => (
+              <a key={t.id} href={href({ page: "lab", lab: t.id || undefined })} aria-current={tab === t.id ? "page" : undefined}>{t.label}</a>
+            ))}
           </nav>
         </header>
       )}
@@ -57,10 +76,17 @@ export default function LabPage({ data, sub }: { readonly data: LabData; readonl
         <ChallengeView key={challenge.id} challenge={challenge} data={data} />
       ) : tab === "playground" ? (
         <Playground />
-      ) : sub ? (
+      ) : tab === "tokenizer" ? (
+        <TokenizerLab />
+      ) : tab === "scratchpad" ? (
+        <Scratchpad />
+      ) : tab === null ? (
         <p className="empty">No challenge called "{sub}". <a href={href({ page: "lab" })}>See all challenges</a></p>
       ) : (
-        <ChallengeList data={data} />
+        <>
+          <RacePanel data={data} />
+          <ChallengeList data={data} />
+        </>
       )}
     </div>
   );

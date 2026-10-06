@@ -11,9 +11,12 @@ interface Props {
   readonly onRun: () => void;
   /** Changing this key replaces the editor content with `value` (e.g. after Reset). */
   readonly resetKey: number;
+  /** Also run on Shift + Enter (notebook style). */
+  readonly shiftEnterRuns?: boolean;
+  readonly label?: string;
 }
 
-export function CodeEditor({ value, onChange, onRun, resetKey }: Props) {
+export function CodeEditor({ value, onChange, onRun, resetKey, shiftEnterRuns = false, label = "Python code editor" }: Props) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   const handlers = useRef({ onChange, onRun });
@@ -30,12 +33,13 @@ export function CodeEditor({ value, onChange, onRun, resetKey }: Props) {
         python(),
         keymap.of([
           { key: "Mod-Enter", run: () => { handlers.current.onRun(); return true; } },
+          ...(shiftEnterRuns ? [{ key: "Shift-Enter", run: () => { handlers.current.onRun(); return true; } }] : []),
           indentWithTab,
         ]),
         EditorView.updateListener.of((u) => {
           if (u.docChanged) handlers.current.onChange(u.state.doc.toString());
         }),
-        EditorView.contentAttributes.of({ "aria-label": "Python code editor" }),
+        EditorView.contentAttributes.of({ "aria-label": label }),
         ...(dark ? [oneDark] : []),
       ],
     });

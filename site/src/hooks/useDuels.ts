@@ -3,10 +3,16 @@ import { supabase } from "../supabase";
 import type { Duel, DuelEntry } from "../duels";
 import { dbError, toGraded, type GradedQuiz, type Outcome, type QuizQuestion, type SubmitResult } from "./useQuizzes";
 
-/** start_duel returns either a wait (before the shared start time) or the questions. */
+/** start_duel returns a wait (before the shared start time), the questions (quiz) or the challenge id (code race). */
 export type DuelStart =
   | { readonly kind: "wait"; readonly startsAt: number; readonly serverOffset: number }
-  | { readonly kind: "play"; readonly startsAt: number; readonly endsAt: number; readonly serverOffset: number; readonly questions: readonly QuizQuestion[] };
+  | { readonly kind: "play"; readonly startsAt: number; readonly endsAt: number; readonly serverOffset: number; readonly questions: readonly QuizQuestion[] }
+  | { readonly kind: "race"; readonly startsAt: number; readonly endsAt: number; readonly serverOffset: number; readonly challengeId: string };
+
+export interface RaceSubmitted {
+  readonly score: number;
+  readonly time_ms: number;
+}
 
 export interface DuelGraded extends GradedQuiz {
   readonly time_ms: number;
@@ -23,9 +29,13 @@ export interface DuelsState {
   readonly start: (duelId: string) => Promise<Outcome<DuelStart>>;
   readonly submit: (duelId: string, answers: readonly number[]) => Promise<Outcome<DuelGraded>>;
   readonly finish: (duelId: string) => Promise<void>;
+  /** Race a member on a challenge the server picks at random. */
+  readonly createRace: (opponentId: string) => Promise<Outcome<string>>;
+  /** Report a race result: every test passed, or gave up. */
+  readonly submitRace: (duelId: string, passed: boolean, code: string) => Promise<Outcome<RaceSubmitted>>;
 }
 
-const DUEL_COLUMNS = "id,item_id,challenger,opponent,status,winner,created_at,completed_at,starts_at";
+const DUEL_COLUMNS = "id,kind,item_id,challenge_id,challenger,opponent,status,winner,created_at,completed_at,starts_at";
 const ENTRY_COLUMNS = "duel_id,user_id,started_at,submitted_at,score,time_ms";
 const OFFLINE: Outcome<never> = { ok: false, error: "The site isn't connected to its database." };
 
@@ -131,7 +141,7 @@ export function useDuels(): DuelsState {
   }, [call, refreshDuel]);
 
   const start = useCallback(async (duelId: string): Promise<Outcome<DuelStart>> => {
-    const res = await call<{ starts_at: string; ends_at?: string; server_now: string; questions?: QuizQuestion[]; over?: boolean }>(
+    const res = await call<{ starts_at: string; ends_at?: string; server_now: string; questions?: QuizQuestion[] | null; challenge_id?: string | null; over?: boolean }>(
       "start_duel", { p_duel: duelId }, "Couldn't open the duel. Try again.",
     );
     if (!res.ok) return res;
@@ -142,9 +152,10 @@ export function useDuels(): DuelsState {
     }
     const serverOffset = offsetFrom(r.server_now);
     const startsAt = new Date(r.starts_at).getTime();
-    return r.questions && r.ends_at
-      ? { ok: true, value: { kind: "play", startsAt, endsAt: new Date(r.ends_at).getTime(), serverOffset, questions: r.questions } }
-      : { ok: true, value: { kind: "wait", startsAt, serverOffset } };
+    if (!r.ends_at) return { ok: true, value: { kind: "wait", startsAt, serverOffset } };
+    const endsAt = new Date(r.ends_at).getTime();
+    if (r.challenge_id) return { ok: true, value: { kind: "race", startsAt, endsAt, serverOffset, challengeId: r.challenge_id } };
+    return { ok: true, value: { kind: "play", startsAt, endsAt, serverOffset, questions: r.questions ?? [] } };
   }, [call, refreshDuel]);
 
   const submit = useCallback(async (duelId: string, answers: readonly number[]): Promise<Outcome<DuelGraded>> => {
@@ -162,6 +173,23 @@ export function useDuels(): DuelsState {
     await refreshDuel(duelId);
   }, [call, refreshDuel]);
 
+  const createRace = useCallback(async (opponentId: string): Promise<Outcome<string>> => {
+    const res = await call<{ id: string }>("create_race", { p_opponent: opponentId }, "Couldn't send the race challenge. Try again.");
+    if (!res.ok) return res;
+    await refreshDuel(res.value.id);
+    return { ok: true, value: res.value.id };
+  }, [call, refreshDuel]);
+
+  const submitRace = useCallback(async (duelId: string, passed: boolean, code: string): Promise<Outcome<RaceSubmitted>> => {
+    const res = await call<RaceSubmitted | { over: true }>(
+      "submit_race", { p_duel: duelId, p_passed: passed, p_code: code }, "Couldn't send your result. Try again.",
+    );
+    await Promise.all([reloadEntries(), refreshDuel(duelId)]);
+    if (!res.ok) return res;
+    if ("over" in res.value) return { ok: false, error: "This race is already over" };
+    return { ok: true, value: res.value };
+  }, [call, reloadEntries, refreshDuel]);
+
   // Safety net for missed realtime events: re-read pending and live duels every few seconds.
   const activeIds = duels.filter((d) => d.status === "pending" || d.status === "live").map((d) => d.id).join(",");
   useEffect(() => {
@@ -174,5 +202,5 @@ export function useDuels(): DuelsState {
     return () => window.clearInterval(t);
   }, [activeIds, refreshDuel, reloadEntries]);
 
-  return { loaded, duels, entries, create, respond, cancel, start, submit, finish };
+  return { loaded, duels, entries, create, respond, cancel, start, submit, finish, createRace, submitRace };
 }

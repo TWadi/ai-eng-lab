@@ -131,6 +131,7 @@ export function App() {
     solves: solveState.solves,
     onPlayersChanged: reloadMembers,
     onSolved: me?.is_member ? onSolved : null,
+    onRace: me?.is_member ? duels.createRace : null,
   };
   const signedInNonMember = Boolean(auth.session) && !auth.loading && !me?.is_member;
 
@@ -199,6 +200,7 @@ export function App() {
           onHide={(id) => setHiddenInvites((cur) => new Set([...cur, id]))}
           onToast={showToast}
           onWin={onDuelWin}
+          onSolved={onSolved}
         />
       )}
 

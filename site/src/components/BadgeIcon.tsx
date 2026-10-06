@@ -13,6 +13,7 @@ export const BADGE_PATHS: Record<BadgeId, string> = {
   "rag-master": "M9 4h6M10 4v5L5.5 17A2 2 0 0 0 7.3 20h9.4a2 2 0 0 0 1.8-3L14 9V4M8 14h8",
   "duelist": "M4 4l10 10M4 4h3l9 9M14 14l3 3M17 14l-3 3M20 4L10 14M20 4h-3l-9 9M10 14l-3 3M7 14l3 3",
   "coder": "M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16",
+  "speed-coder": "M13 4a8 8 0 1 1-7.4 5M12 13l4-4M10 2h6M3 9h4M2 13h4M3 17h3",
 };
 
 export function BadgeIcon({ id, size = 22 }: { readonly id: BadgeId; readonly size?: number }) {
