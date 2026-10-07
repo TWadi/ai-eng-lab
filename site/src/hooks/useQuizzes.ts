@@ -47,13 +47,14 @@ export interface QuizzesState {
   readonly submit: (quizId: string, answers: readonly number[]) => Promise<Outcome<GradedQuiz>>;
 }
 
-const RESULT_COLUMNS = "id,user_id,item_id,score,total,completed_at";
+const RESULT_COLUMNS = "id,user_id,item_id,score,total,completed_at,source_duel";
 
 function toResult(row: Record<string, unknown>): QuizResult | null {
   if (!row.completed_at || row.score === null || row.score === undefined) return null;
   return {
     id: String(row.id), user_id: String(row.user_id), item_id: String(row.item_id),
     score: Number(row.score), total: Number(row.total), completed_at: String(row.completed_at),
+    source_duel: row.source_duel ? String(row.source_duel) : null,
   };
 }
 

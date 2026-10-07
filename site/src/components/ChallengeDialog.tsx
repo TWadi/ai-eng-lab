@@ -44,7 +44,7 @@ export function ChallengeDialog({ item, rivals, colorOf, create, onCreated, onCl
       <div className="quiz-body">
         <p className="muted">
           They get a notification and have 5 minutes to accept. Then you both get the same 5 questions on <b>{item.title}</b> at the same moment, with 2 minutes on the clock. Higher score wins; if it's a tie, the faster player wins.
-          Winner gets +{DUEL_XP.win} XP, a draw gives +{DUEL_XP.draw} each.
+          Winner gets +{DUEL_XP.win} XP, a draw gives +{DUEL_XP.draw} each. Your score also counts as your quiz on this lecture, so no need to take it again.
         </p>
         <div className="rivals">
           {rivals.map((r) => (

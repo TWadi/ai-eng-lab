@@ -66,3 +66,11 @@ describe("bestScores", () => {
     expect(Object.keys(best)).toHaveLength(2);
   });
 });
+
+describe("quizzes from duels", () => {
+  it("count for best scores but don't repeat the duel in the feed", () => {
+    const fromDuel = quiz({ id: "d", score: 5, source_duel: "duel-1" });
+    expect(buildFeed({}, [fromDuel], 10).filter((e) => e.kind === "quiz")).toEqual([]);
+    expect(bestScores([quiz({ id: "s", score: 2 }), fromDuel], "rag-1").a?.score).toBe(5);
+  });
+});

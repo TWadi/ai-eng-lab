@@ -13,6 +13,8 @@ export interface QuizResult {
   readonly score: number;
   readonly total: number;
   readonly completed_at: string;
+  /** Set when the attempt came from a quiz duel (it counts as the quiz for that item). */
+  readonly source_duel?: string | null;
 }
 
 export type ActivityEvent =
@@ -51,7 +53,8 @@ export function buildFeed(
   const done: ActivityEvent[] = Object.entries(progress).flatMap(([userId, items]) =>
     Object.entries(items).map(([itemId, at]) => ({ kind: "done" as const, userId, itemId, at })),
   );
-  const quiz: ActivityEvent[] = quizzes.map((q) => ({
+  // A duel's answer sheet also counts as a quiz, but the feed already shows the duel itself.
+  const quiz: ActivityEvent[] = quizzes.filter((q) => !q.source_duel).map((q) => ({
     kind: "quiz" as const, userId: q.user_id, itemId: q.item_id, at: q.completed_at, score: q.score, total: q.total,
   }));
   const scoreOf = (duelId: string, userId: string) => entries.find((e) => e.duel_id === duelId && e.user_id === userId)?.score ?? null;
