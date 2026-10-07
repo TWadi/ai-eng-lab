@@ -10,6 +10,7 @@ import { PlayerCard } from "../components/PlayerCard";
 import { QuestRow } from "../components/QuestRow";
 import { DuelsPanel } from "../components/DuelsPanel";
 import { PlayersPanel } from "../components/PlayersPanel";
+import { usePlayers } from "../hooks/usePlayers";
 
 function weekLine(now: Date): string {
   const week = weekNumber(START_DATE, now);
@@ -25,9 +26,19 @@ export function DashboardPage({ data }: { readonly data: LabData }) {
   const current = phaseForWeek(PHASES, weekNumber(START_DATE, now)) ?? PHASES[0];
   const quests = me?.is_member ? nextQuests(PHASES, current.id, progress[me.id] ?? {}) : [];
   const feed = buildFeed(progress, data.quizResults, 6, data.duels, data.duelEntries, data.solves);
+  const admin = usePlayers(Boolean(me?.is_admin), data.onPlayersChanged);
+  const waiting = admin.overview?.waiting.length ?? 0;
 
   return (
     <div className="page dashboard">
+      {me?.is_admin && waiting > 0 && (
+        <p className="banner waiting-alert" role="status">
+          <b>{waiting === 1 ? "1 person is" : `${waiting} people are`} waiting to join.</b>{" "}
+          <button type="button" className="btn btn-primary btn-small" onClick={() => document.getElementById("players-panel")?.scrollIntoView({ behavior: "smooth" })}>
+            Review
+          </button>
+        </p>
+      )}
       <section className="hero">
         <div className="hero-copy">
           <p className="eyebrow">{weekLine(now)}</p>
@@ -99,7 +110,7 @@ export function DashboardPage({ data }: { readonly data: LabData }) {
 
       <BadgeCabinet data={data} />
 
-      <PlayersPanel data={data} />
+      {me?.is_admin && <PlayersPanel data={data} admin={admin} />}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bestScores, buildFeed, relativeTime, weekStartOf, weekStats, type QuizResult } from "./activity";
+import { bestScores, buildFeed, hasPassed, isPass, relativeTime, weekStartOf, weekStats, type QuizResult } from "./activity";
 
 const quiz = (over: Partial<QuizResult>): QuizResult => ({
   id: "q", user_id: "a", item_id: "rag-1", score: 3, total: 5, completed_at: "2026-10-05T10:00:00Z", ...over,
@@ -72,5 +72,16 @@ describe("quizzes from duels", () => {
     const fromDuel = quiz({ id: "d", score: 5, source_duel: "duel-1" });
     expect(buildFeed({}, [fromDuel], 10).filter((e) => e.kind === "quiz")).toEqual([]);
     expect(bestScores([quiz({ id: "s", score: 2 }), fromDuel], "rag-1").a?.score).toBe(5);
+  });
+});
+
+describe("quiz pass mark", () => {
+  it("passes at 4/5 and above, for solo quizzes and duels alike", () => {
+    expect(isPass({ score: 4, total: 5 })).toBe(true);
+    expect(isPass({ score: 3, total: 5 })).toBe(false);
+    const results = [quiz({ id: "1", score: 3 }), quiz({ id: "2", score: 4, source_duel: "d" })];
+    expect(hasPassed(results, "a", "rag-1")).toBe(true);
+    expect(hasPassed([quiz({ id: "1", score: 3 })], "a", "rag-1")).toBe(false);
+    expect(hasPassed(results, "b", "rag-1")).toBe(false);
   });
 });

@@ -127,6 +127,18 @@ export function relativeTime(iso: string, now: Date): string {
 }
 
 /** Best completed score per user for one item. */
+/** Pass mark for a quiz: 4 out of 5 (80%). Must match passed_quiz() in the quiz_gates_progress migration. */
+export const QUIZ_PASS_RATIO = 0.8;
+
+export function isPass(q: Pick<QuizResult, "score" | "total">): boolean {
+  return q.total > 0 && q.score * 5 >= q.total * 4;
+}
+
+/** Has this player passed the quiz of this item (solo or in a duel)? */
+export function hasPassed(quizzes: readonly QuizResult[], userId: string, itemId: string): boolean {
+  return quizzes.some((q) => q.user_id === userId && q.item_id === itemId && isPass(q));
+}
+
 export function bestScores(quizzes: readonly QuizResult[], itemId: string): Readonly<Record<string, QuizResult>> {
   return quizzes
     .filter((q) => q.item_id === itemId)

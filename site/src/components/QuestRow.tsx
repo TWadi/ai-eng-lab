@@ -1,4 +1,4 @@
-import { bestScores } from "../activity";
+import { bestScores, hasPassed } from "../activity";
 import { itemXp } from "../gamify";
 import type { LabData } from "../lab";
 import type { RoadmapItem } from "../roadmap";
@@ -20,6 +20,8 @@ export function QuestRow({ item, data, compact = false, phaseLabel }: Props) {
   const scored = members.filter((m) => best[m.id]);
   const hasQuiz = data.quizAvailable.has(item.id);
   const inputId = `q-${compact ? "c-" : ""}${item.id}`;
+  // A lecture with a quiz is completed by passing the quiz (4/5), not by ticking the box.
+  const locked = hasQuiz && !done && !(me && hasPassed(data.quizResults, me.id, item.id));
 
   return (
     <li className={`quest${done ? " done" : ""}${compact ? " compact" : ""}`}>
@@ -29,8 +31,10 @@ export function QuestRow({ item, data, compact = false, phaseLabel }: Props) {
           id={inputId}
           className="quest-check"
           checked={done}
+          disabled={locked}
+          title={locked ? "Pass the quiz (4/5 or better) to complete this" : undefined}
           onChange={(e) => onToggle(item.id, e.target.checked, e.currentTarget)}
-          aria-label={`Mark "${item.title}" as ${done ? "not done" : "done"}`}
+          aria-label={locked ? `Pass the quiz to complete "${item.title}"` : `Mark "${item.title}" as ${done ? "not done" : "done"}`}
         />
       ) : (
         <span className="quest-check placeholder" aria-hidden="true" />
@@ -51,6 +55,7 @@ export function QuestRow({ item, data, compact = false, phaseLabel }: Props) {
         {!compact && hasQuiz && (onQuiz || scored.length > 0) && (
           <div className="quest-quiz">
             {onQuiz && <button type="button" className="btn btn-quiz" onClick={() => onQuiz(item)}>Quiz me</button>}
+            {onQuiz && locked && <span className="quiz-gate">Pass with 4/5 to complete</span>}
             {onDuel && members.length > 1 && <button type="button" className="btn btn-duel" onClick={() => onDuel(item)}>Duel</button>}
             {scored.map((m) => {
               const s = best[m.id];
