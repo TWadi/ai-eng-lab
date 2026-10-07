@@ -121,4 +121,4 @@ Branch per piece of work, one review from the other before merging, and a weekly
 
 ---
 
-Started by [Wadi](https://github.com/TWadi) and [Ghassen](https://github.com/GhassenJamoussi99), with [Yassine](https://github.com/bravo421) joining along the way. If you learn with a friend using this, we'd love to hear about it.
+Started by [Wadi](https://github.com/TWadi) and [Ghassen](https://github.com/GhassenJamoussi99). If you learn with a friend using this, we'd love to hear about it.
