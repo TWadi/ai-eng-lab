@@ -111,6 +111,10 @@ npm ci
 npm run dev                  # http://localhost:5173/ai-engineering-arena/
 ```
 
+## License
+
+[Apache 2.0](LICENSE). Use it, fork it, learn with your own friends; just keep the notice.
+
 ## How we work
 
 Branch per piece of work, one review from the other before merging, and a weekly rhythm of solo deep work plus a pair session. See [CONTRIBUTING.md](CONTRIBUTING.md).
