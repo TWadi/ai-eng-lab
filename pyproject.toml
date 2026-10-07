@@ -1,5 +1,6 @@
 [project]
 name = "ai-engineering-arena"
+license = "Apache-2.0"
 version = "0.1.0"
 description = "Shared workspace for learning AI engineering"
 readme = "README.md"

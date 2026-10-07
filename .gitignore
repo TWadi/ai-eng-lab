@@ -44,3 +44,6 @@ site/dist/
 
 # Local clones of course repos (not ours to publish)
 rag-for-beginners/
+
+# Editor settings stay personal
+.vscode/
