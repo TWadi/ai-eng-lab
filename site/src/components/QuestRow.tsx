@@ -31,10 +31,10 @@ export function QuestRow({ item, data, compact = false, phaseLabel }: Props) {
           id={inputId}
           className="quest-check"
           checked={done}
-          disabled={locked}
-          title={locked ? "Pass the quiz (4/5 or better) to complete this" : undefined}
-          onChange={(e) => onToggle(item.id, e.target.checked, e.currentTarget)}
-          aria-label={locked ? `Pass the quiz to complete "${item.title}"` : `Mark "${item.title}" as ${done ? "not done" : "done"}`}
+          disabled={locked || done}
+          title={done ? "Done! Finished lessons stay finished." : locked ? "Pass the quiz (4/5 or better) to complete this" : undefined}
+          onChange={(e) => { if (e.target.checked) onToggle(item.id, true, e.currentTarget); }}
+          aria-label={done ? `"${item.title}" is done` : locked ? `Pass the quiz to complete "${item.title}"` : `Mark "${item.title}" as done`}
         />
       ) : (
         <span className="quest-check placeholder" aria-hidden="true" />

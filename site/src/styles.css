@@ -708,3 +708,4 @@ dialog.arena.race { width: min(1180px, calc(100vw - 24px)); }
 .declined-list summary { cursor: pointer; font-weight: 700; font-size: 14px; color: var(--muted); }
 .declined-list .invited-chips { margin-top: 8px; }
 .quest-check:disabled { cursor: not-allowed; opacity: 0.45; }
+.quest.done .quest-check:disabled { cursor: default; opacity: 1; }
