@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../supabase";
 import type { QuizResult } from "../activity";
 import type { RoadmapItem } from "../roadmap";
@@ -45,6 +45,7 @@ export interface QuizzesState {
   readonly available: ReadonlySet<string>;
   readonly start: (item: RoadmapItem) => Promise<Outcome<OpenQuiz>>;
   readonly submit: (quizId: string, answers: readonly number[]) => Promise<Outcome<GradedQuiz>>;
+  readonly reload: () => Promise<void>;
 }
 
 const RESULT_COLUMNS = "id,user_id,item_id,score,total,completed_at,source_duel";
@@ -80,6 +81,7 @@ export function dbError(err: { message?: string; code?: string } | null, fallbac
 
 export function useQuizzes(): QuizzesState {
   const [results, setResults] = useState<readonly QuizResult[]>([]);
+  const reloadRef = useRef<(() => Promise<void>) | null>(null);
   const [available, setAvailable] = useState<ReadonlySet<string>>(new Set());
 
   useEffect(() => {
@@ -87,16 +89,18 @@ export function useQuizzes(): QuizzesState {
     if (!client) return;
     let active = true;
 
-    (async () => {
+    const reloadResults = async () => {
       const { data, error } = await client.from("quiz_attempts").select(RESULT_COLUMNS)
-        .not("completed_at", "is", null).order("completed_at", { ascending: false }).limit(300);
+        .not("completed_at", "is", null).order("completed_at", { ascending: false }).limit(500);
       if (!active) return;
       if (error) {
         console.error("Failed to load quiz results", error);
         return;
       }
       setResults((data ?? []).map(toResult).filter((r): r is QuizResult => r !== null));
-    })();
+    };
+    reloadRef.current = reloadResults;
+    void reloadResults();
 
     (async () => {
       const { data, error } = await client.rpc("quiz_items");
@@ -108,16 +112,33 @@ export function useQuizzes(): QuizzesState {
       setAvailable(new Set(((data ?? []) as { item_id: string }[]).map((r) => r.item_id)));
     })();
 
+    let subscribedBefore = false;
     const channel = client
       .channel("quiz-changes")
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "quiz_attempts" }, (payload) => {
+      // INSERT too: a duel saves each player's answer sheet as a new, already finished attempt.
+      .on("postgres_changes", { event: "*", schema: "public", table: "quiz_attempts" }, (payload) => {
+        if (payload.eventType === "DELETE") return;
         const result = toResult(payload.new as Record<string, unknown>);
         if (result) setResults((cur) => [result, ...cur.filter((r) => r.id !== result.id)]);
       })
-      .subscribe();
+      .subscribe((status) => {
+        // After a reconnect, events may have been missed: reload everything.
+        if (status === "SUBSCRIBED") {
+          if (subscribedBefore) void reloadResults();
+          subscribedBefore = true;
+        }
+      });
+
+    // Coming back to the tab (e.g. after a duel on another device): catch up.
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void reloadResults();
+    };
+    document.addEventListener("visibilitychange", onVisible);
 
     return () => {
       active = false;
+      reloadRef.current = null;
+      document.removeEventListener("visibilitychange", onVisible);
       client.removeChannel(channel);
     };
   }, []);
@@ -141,8 +162,15 @@ export function useQuizzes(): QuizzesState {
       console.error("Failed to submit quiz", error);
       return { ok: false, error: "Couldn't submit your answers. Try again." };
     }
+    // Don't rely on the realtime event alone: read the new score back right away.
+    void reloadRef.current?.();
     return { ok: true, value: toGraded(data as SubmitResult) };
   }, []);
 
-  return { results, available, start, submit };
+  /** Re-read all finished quizzes (e.g. right after a duel, whose answer sheet counts as a quiz). */
+  const reload = useCallback(async () => {
+    await reloadRef.current?.();
+  }, []);
+
+  return { results, available, start, submit, reload };
 }

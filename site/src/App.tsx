@@ -83,6 +83,13 @@ export function App() {
     [me, record, solveState.solves],
   );
 
+  // A finished duel also saves each player's answers as a quiz: pick those scores up right away.
+  const { reload: reloadQuizzes } = quizzes;
+  const duelsSubmitted = duels.entries.filter((e) => e.submitted_at).length;
+  useEffect(() => {
+    if (duelsSubmitted > 0) void reloadQuizzes();
+  }, [duelsSubmitted, reloadQuizzes]);
+
   const showToast = useCallback((title: string, body: string) => setToast({ id: Date.now(), title, body }), []);
   const onDuelWin = useCallback(() => {
     bigCelebration();
