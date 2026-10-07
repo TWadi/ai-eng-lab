@@ -702,3 +702,9 @@ dialog.arena.race { width: min(1180px, calc(100vw - 24px)); }
 @media (max-width: 560px) {
   .invite-form { grid-template-columns: 1fr; }
 }
+
+.quiz-gate { font: 600 12px var(--font-mono); color: var(--muted); }
+.waiting-alert { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; background: var(--sun); color: #17183a; }
+.declined-list summary { cursor: pointer; font-weight: 700; font-size: 14px; color: var(--muted); }
+.declined-list .invited-chips { margin-top: 8px; }
+.quest-check:disabled { cursor: not-allowed; opacity: 0.45; }

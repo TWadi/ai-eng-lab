@@ -1,14 +1,13 @@
 import { useState, type FormEvent } from "react";
 import { relativeTime } from "../activity";
 import type { LabData } from "../lab";
-import { cleanGithubInput, isGithubUsername, usePlayers } from "../hooks/usePlayers";
+import { cleanGithubInput, isGithubUsername, type PlayersAdmin } from "../hooks/usePlayers";
 import { Avatar } from "./Avatar";
 
 type Note = { readonly ok: boolean; readonly text: string } | null;
 
 /** Admin-only: let people who signed in become players, invite usernames ahead of time, remove players. */
-export function PlayersPanel({ data }: { readonly data: LabData }) {
-  const admin = usePlayers(Boolean(data.me?.is_admin), data.onPlayersChanged);
+export function PlayersPanel({ data, admin }: { readonly data: LabData; readonly admin: PlayersAdmin }) {
   const [name, setName] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<string | null>(null);
@@ -41,9 +40,10 @@ export function PlayersPanel({ data }: { readonly data: LabData }) {
   const players = data.members.filter((m) => !m.is_admin);
   const waiting = admin.overview?.waiting ?? [];
   const invited = admin.overview?.invited ?? [];
+  const declined = admin.overview?.declined ?? [];
 
   return (
-    <section className="panel players-panel" aria-labelledby="players-title">
+    <section className="panel players-panel" id="players-panel" aria-labelledby="players-title">
       <div className="panel-head">
         <h2 id="players-title" className="panel-title">Players</h2>
         <span className="admin-tag">Admins only</span>
@@ -77,9 +77,28 @@ export function PlayersPanel({ data }: { readonly data: LabData }) {
                 onClick={() => void run(w.github_username, () => admin.invite(w.github_username), `${w.display_name || w.github_username} is now a player.`)}>
                 {busy === w.github_username ? "Letting in…" : "Let in"}
               </button>
+              <button type="button" className="btn btn-ghost btn-small" disabled={busy !== null}
+                onClick={() => void run(`no-${w.github_username}`, () => admin.decline(w.github_username), `Declined @${w.github_username}. You can still let them in later.`)}>
+                {busy === `no-${w.github_username}` ? "Declining…" : "Decline"}
+              </button>
             </li>
           ))}
         </ul>
+      )}
+
+      {declined.length > 0 && (
+        <details className="declined-list">
+          <summary>Declined ({declined.length})</summary>
+          <ul className="invited-chips">
+            {declined.map((d) => (
+              <li key={d.github_username}>
+                @{d.github_username}
+                <button type="button" className="btn-link" disabled={busy !== null}
+                  onClick={() => void run(d.github_username, () => admin.invite(d.github_username), `${d.display_name || d.github_username} is now a player.`)}>Let in</button>
+              </li>
+            ))}
+          </ul>
+        </details>
       )}
 
       {invited.length > 0 && (

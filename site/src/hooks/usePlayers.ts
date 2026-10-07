@@ -14,6 +14,8 @@ export interface WaitingPlayer {
 export interface PlayersOverview {
   /** Signed in with GitHub but not a player yet. */
   readonly waiting: readonly WaitingPlayer[];
+  /** Signed in but turned down (they can still be let in later). */
+  readonly declined: readonly WaitingPlayer[];
   /** Invited GitHub usernames that haven't signed in yet. */
   readonly invited: readonly string[];
 }
@@ -24,6 +26,7 @@ export interface PlayersAdmin {
   readonly refresh: () => Promise<void>;
   readonly invite: (github: string) => Promise<Outcome<{ readonly signedIn: boolean }>>;
   readonly remove: (github: string) => Promise<Outcome<null>>;
+  readonly decline: (github: string) => Promise<Outcome<null>>;
 }
 
 /** Admin-only player management. Pass enabled=false for everyone else (no calls are made). */
@@ -68,5 +71,13 @@ export function usePlayers(enabled: boolean, onChanged: () => void): PlayersAdmi
     return { ok: true, value: null };
   }, [refresh, onChanged]);
 
-  return { overview, error, refresh, invite, remove };
+  const decline = useCallback(async (github: string): Promise<Outcome<null>> => {
+    if (!supabase) return { ok: false, error: "The site isn't connected to its database." };
+    const { error: err } = await supabase.rpc("decline_player", { p_github: github });
+    if (err) return { ok: false, error: dbError(err, "Couldn't decline that player.") };
+    await refresh();
+    return { ok: true, value: null };
+  }, [refresh]);
+
+  return { overview, error, refresh, invite, remove, decline };
 }
