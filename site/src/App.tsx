@@ -219,7 +219,7 @@ export function App() {
       )}
 
       <footer className="foot">
-        Built by TWadi, GhassenJamoussi99 and bravo421 · <a href="https://github.com/TWadi/ai-eng-lab" target="_blank" rel="noopener">Code on GitHub</a>
+        Built by TWadi, GhassenJamoussi99 and bravo421 · <a href="https://github.com/TWadi/ai-engineering-arena" target="_blank" rel="noopener">Code on GitHub</a>
       </footer>
     </div>
   );

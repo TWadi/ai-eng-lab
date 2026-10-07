@@ -263,7 +263,7 @@ export async function drawCard(canvas: HTMLCanvasElement, model: CardModel, avat
   ctx.fillText("AI", 100, CARD_H - 88);
   ctx.fillStyle = C.ink;
   ctx.font = `26px ${DISPLAY}`;
-  ctx.fillText("Eng Lab", 148, CARD_H - 86);
+  ctx.fillText("Eng Arena", 148, CARD_H - 86);
   ctx.textAlign = "right";
   ctx.fillStyle = C.muted;
   ctx.font = `600 18px ${MONO}`;

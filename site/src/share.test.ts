@@ -36,14 +36,14 @@ describe("buildCard", () => {
     expect(c.stats.find((s) => s.label === "Duel wins")?.value).toBe("2");
     expect(c.caption).toContain(SITE_URL);
     expect(c.caption).toContain("2 duel wins");
-    expect(c.fileName).toMatch(/^ai-eng-lab-twadi-level-\d+\.png$/);
+    expect(c.fileName).toMatch(/^ai-engineering-arena-twadi-level-\d+\.png$/);
   });
 
   it("features the badge on a badge card", () => {
     const c = buildCard({ type: "badge", id: "quiz-whiz" }, input);
     expect(c).toMatchObject({ eyebrow: "Badge unlocked", headline: "Quiz Whiz", featuredBadge: "quiz-whiz" });
     expect(c.caption).toContain('"Quiz Whiz"');
-    expect(c.fileName).toBe("ai-eng-lab-twadi-badge-quiz-whiz.png");
+    expect(c.fileName).toBe("ai-engineering-arena-twadi-badge-quiz-whiz.png");
   });
 
   it("describes the phase on a phase card", () => {

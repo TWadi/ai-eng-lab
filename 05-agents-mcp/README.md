@@ -21,4 +21,4 @@ An agent that completes a multi-step task through your MCP server, with traces y
 
 - Your work: `05-agents-mcp/<your-github-username>/`
 - Anything more than one of you reuses: `shared/` + a test in `tests/`
-- Tick items on the [lab website](https://twadi.github.io/ai-eng-lab/) too
+- Tick items on the [lab website](https://twadi.github.io/ai-engineering-arena/) too

@@ -1,56 +1,120 @@
-# ai-eng-lab
+# AI Engineering Arena
 
-Our shared workspace for learning AI engineering together: a 40-week track from Python foundations to shipping production LLM apps and agents.
+**Two friends learning AI engineering, and the game we built to keep each other going.**
 
-- **Website and live progress:** https://twadi.github.io/ai-eng-lab/ (source in [site/](site/))
-- **Start:** Monday 12 October 2026
-- **Pace:** 8–10 focused hours per person per week
+👉 **Live:** https://twadi.github.io/ai-engineering-arena/
 
-## Phases
+![The dashboard: leaderboard, levels, streaks and badges](docs/dashboard.png)
 
-| # | Folder | Weeks | Ship |
-|---|--------|-------|------|
-| 0 | [00-setup](00-setup/) | 1 | Repo live, both merged a hello-world notebook via reviewed PR |
-| 1 | [01-foundations](01-foundations/) | 2–5 | Tested Python CLI + analysis notebook |
-| 2 | [02-classical-ml](02-classical-ml/) | 6–10 | Kaggle submission + model comparison report |
-| 3 | [03-deep-learning](03-deep-learning/) | 11–17 | Tiny GPT trained on our own corpus |
-| 4 | [04-llm-apps](04-llm-apps/) | 18–24 | RAG app over lecture PDFs + eval report |
-| 5 | [05-agents-mcp](05-agents-mcp/) | 25–29 | Agent using our own MCP server, with traces |
-| 6 | [06-production](06-production/) | 30–34 | Deployed app with CI evals and cost dashboard |
-| 7 | [07-capstone](07-capstone/) | 35–40 | Public capstone repo, demo, write-up |
+## Our story
 
-## Layout
+In October 2026, [Wadi](https://github.com/TWadi) and [Ghassen](https://github.com/GhassenJamoussi99) decided to stop *talking* about learning AI engineering and actually do it, together. We set ourselves a 40-week path, from Python foundations all the way to shipping production LLM apps and agents.
+
+We know how self-study usually goes: a strong first week, then life gets in the way. So we made it a game. Every lecture we finish earns XP. Quizzes have to be passed before a lecture counts. You can challenge your friend to a live quiz duel the moment you both finish a video. Then we kept adding things: code races, a Python lab in the browser, tokenizers, a tiny LLM running locally...
+
+What started as a progress tracker turned into a small learning platform. This repo is both: **our actual learning journey** (notes, notebooks and projects for every phase) and **the arena we built around it**. We're sharing it in case it helps someone else learn with a friend, and because building it taught us almost as much as the courses did.
+
+Friends are welcome to join: sign in with GitHub, and one of us lets you in.
+
+## What's inside the arena
+
+### Level up together
+- **XP, levels and titles**, from *Prompt Padawan* to *Lab Legend*.
+- **Badges and streaks**: hat tricks, perfect quizzes, phase finishers.
+- **A live leaderboard.**
+- **Activity feed** so you see the moment your friend finishes something (and feel the pressure).
+- **Profiles** with an XP-over-time chart and **share cards** you can post when you level up.
+
+### Learn, then prove it
+- **The roadmap:** a RAG warm-up course, then 8 phases over 40 weeks, each with lectures, reading and a project to ship.
+- **Quizzes for every lecture**, drawn from our own question bank and graded on the server (no peeking at answers).
+- **A lecture only counts once you pass its quiz** (4/5 or better). Passing ticks it for you.
+
+### Compete
+- **Live quiz duels:** challenge a friend, they get a notification, and once they accept you both get the same 5 questions on a 2-minute clock. Best score wins, ties go to the faster player. A duel also counts as your quiz.
+- **Code races:** a random coding challenge, revealed to both of you at the same moment. First to pass every test wins, then you compare each other's code.
+
+### The Lab: hands-on, all in the browser, all free
+![The Lab](docs/lab.png)
+
+- **Coding challenges** (cosine similarity, chunking, BM25, reciprocal rank fusion, MMR…), graded instantly by real Python running in your browser ([Pyodide](https://pyodide.org)).
+- **Python scratchpad:** a mini notebook with numpy, pandas, matplotlib and scikit-learn.
+- **Embeddings & RAG:**
+  - Embed sentences and see them on a 2D map.
+  - Chunk a document and retrieve the chunks that match a question.
+  - Watch **a small LLM running on your own GPU** write the answer from those chunks ([transformers.js](https://huggingface.co/docs/transformers.js)).
+- **Tokenizers:** see how GPT-4o, GPT-2, BERT, T5 and others chop up the same text.
+
+![The roadmap](docs/roadmap.png)
+
+## The learning path
+
+| # | Phase | Weeks | What we ship |
+|---|-------|-------|--------------|
+| – | [RAG warm-up course](rag-course/) | before week 1 | Notes and quizzes on 17 videos |
+| 0 | [Setup](00-setup/) | 1 | Repo live, first reviewed PRs |
+| 1 | [Foundations](01-foundations/) | 2–5 | Tested Python CLI + analysis notebook |
+| 2 | [Classical ML](02-classical-ml/) | 6–10 | Kaggle submission + model comparison |
+| 3 | [Deep learning](03-deep-learning/) | 11–17 | A tiny GPT trained on our own corpus |
+| 4 | [LLM apps](04-llm-apps/) | 18–24 | RAG app over our lecture PDFs + evals |
+| 5 | [Agents & MCP](05-agents-mcp/) | 25–29 | An agent using our own MCP server |
+| 6 | [Production](06-production/) | 30–34 | Deployed app with CI evals and cost dashboard |
+| 7 | [Capstone](07-capstone/) | 35–40 | Public capstone, demo and write-up |
+
+## Built with (and 100% free to run)
+
+- **Site:** React + TypeScript + Vite, hosted on GitHub Pages.
+- **Backend:** Supabase.
+  - Postgres with row-level security.
+  - Realtime for duels and the live feed.
+  - GitHub sign-in.
+  - Quizzes, duels and races are graded and decided in the database, so nobody can fake a score.
+- **In-browser AI and Python:**
+  - Pyodide for Python.
+  - transformers.js for embeddings, tokenizers and a local Qwen2.5 LLM.
+  - No paid APIs, no API keys.
+- **CI:** GitHub Actions runs the Python tests, checks every coding challenge against its reference solution, then tests and builds the site.
+
+## Repo layout
 
 ```
-ai-eng-lab/
-├── 00-setup/ … 07-capstone/
-│   ├── README.md            goal, checklist, ship criteria for the phase
+ai-engineering-arena/
+├── rag-course/, 00-setup/ … 07-capstone/
+│   ├── README.md            goal, checklist and ship criteria for the phase
 │   └── <github-username>/   each person's own notebooks and code
-├── shared/                  code we both reuse (a real Python package)
-├── site/                    the public progress website (React + Supabase)
-├── supabase/                database schema for the website
-├── tests/                   tests for shared/ — run in CI on every PR
-├── .env.example             copy to .env, never commit .env
-└── pyproject.toml           dependencies, managed with uv
+├── shared/                  Python code we both reuse (with tests)
+├── site/                    the arena website (React + Supabase)
+│   └── challenges/          coding challenges, written in Python with reference solutions
+├── supabase/                database migrations and the quiz question bank
+├── tests/                   tests for shared/, run in CI on every PR
+└── pyproject.toml           Python dependencies, managed with uv
 ```
 
-Personal work goes in `<phase>/<your-github-username>/`. Code that both of us use moves into `shared/` with tests.
+## Run it yourself
 
-## Getting started
+Learning environment:
 
 ```bash
-git clone https://github.com/<owner>/ai-eng-lab.git
-cd ai-eng-lab
+git clone https://github.com/TWadi/ai-engineering-arena.git
+cd ai-engineering-arena
 uv sync                      # creates .venv and installs everything
 cp .env.example .env         # then fill in your own keys
 uv run python 00-setup/check_env.py
 uv run pytest
 ```
 
-Open notebooks with `uv run jupyter lab`, or in VS Code pick the `.venv` interpreter.
+The website (see [site/README.md](site/README.md) for connecting your own Supabase project):
 
-Phase-specific dependencies are installed when that phase starts, for example `uv sync --group ml` in phase 2. See `pyproject.toml`.
+```bash
+cd site
+npm ci
+npm run dev                  # http://localhost:5173/ai-engineering-arena/
+```
 
 ## How we work
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the weekly rhythm, branch naming and review rules.
+Branch per piece of work, one review from the other before merging, and a weekly rhythm of solo deep work plus a pair session. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+---
+
+Started by [Wadi](https://github.com/TWadi) and [Ghassen](https://github.com/GhassenJamoussi99), with [Yassine](https://github.com/bravo421) joining along the way. If you learn with a friend using this, we'd love to hear about it.

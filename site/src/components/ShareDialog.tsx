@@ -89,7 +89,7 @@ export function ShareDialog({ input, avatarUrl, color, onClose }: Props) {
         say("error", "Sharing files isn't supported here. Use Download instead.");
         return;
       }
-      await navigator.share({ files: [file], text: model.caption, title: "AI Engineering Lab" });
+      await navigator.share({ files: [file], text: model.caption, title: "AI Engineering Arena" });
     } catch (err) {
       if ((err as DOMException)?.name !== "AbortError") {
         console.error("Share failed", err);

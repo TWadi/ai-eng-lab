@@ -22,4 +22,4 @@ Your own small GPT trained end to end, plus a write-up explaining attention with
 
 - Your work: `03-deep-learning/<your-github-username>/`
 - Anything more than one of you reuses: `shared/` + a test in `tests/`
-- Tick items on the [lab website](https://twadi.github.io/ai-eng-lab/) too
+- Tick items on the [lab website](https://twadi.github.io/ai-engineering-arena/) too
