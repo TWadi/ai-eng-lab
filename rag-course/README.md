@@ -1,6 +1,6 @@
 # RAG course — Harish Neel, *Complete RAG Tutorial 2026*
 
-Our warm-up before phase 0. Watch together, tick each video on the [lab website](https://twadi.github.io/ai-eng-lab/), and post a note on the site for anything you learned or found unclear.
+Our warm-up before phase 0. Watch together, tick each video on the [lab website](https://twadi.github.io/ai-engineering-arena/), and post a note on the site for anything you learned or found unclear.
 
 Playlist: https://www.youtube.com/playlist?list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY
 

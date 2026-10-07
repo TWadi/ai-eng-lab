@@ -58,7 +58,7 @@ export const PHASES: readonly Phase[] = [
     goal: "Get the shared infrastructure running so the next 39 weeks are about learning, not tooling.",
     ship: "Repo is live and each of you has merged a hello-world notebook through a reviewed PR.",
     items: [
-      { id: "p0-1", kind: "build", title: "Clone ai-eng-lab, run uv sync and the env check script" },
+      { id: "p0-1", kind: "build", title: "Clone ai-engineering-arena, run uv sync and the env check script" },
       { id: "p0-2", kind: "setup", title: "Install Python 3.12, uv, VS Code + Jupyter, Git", url: "https://docs.astral.sh/uv/", source: "uv docs" },
       { id: "p0-3", kind: "setup", title: "Create accounts: GitHub, Hugging Face, Kaggle, Google Colab, Anthropic Console (set a spend limit)" },
       { id: "p0-4", kind: "learn", title: "The Missing Semester: shell, editors, version control", url: "https://missing.csail.mit.edu", source: "MIT" },

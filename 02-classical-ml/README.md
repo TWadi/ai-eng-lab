@@ -20,4 +20,4 @@ Kaggle submission plus a README report comparing models, with the leakage traps 
 
 - Your work: `02-classical-ml/<your-github-username>/`
 - Anything more than one of you reuses: `shared/` + a test in `tests/`
-- Tick items on the [lab website](https://twadi.github.io/ai-eng-lab/) too
+- Tick items on the [lab website](https://twadi.github.io/ai-engineering-arena/) too

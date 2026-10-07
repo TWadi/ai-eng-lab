@@ -25,9 +25,9 @@ export function TopBar({ page, auth, enabled, myStats, myColor, invites, onBell 
 
   return (
     <header className="topbar">
-      <a className="logo" href={href({ page: "dashboard" })} aria-label="AI Engineering Lab home">
+      <a className="logo" href={href({ page: "dashboard" })} aria-label="AI Engineering Arena home">
         <span className="logo-mark" aria-hidden="true">AI</span>
-        <span className="logo-text">Eng Lab</span>
+        <span className="logo-text">Eng Arena</span>
       </a>
 
       <nav className="nav" aria-label="Pages">

@@ -12,7 +12,7 @@ import { PlayerLink } from "../components/ActivityList";
 import { XpChart } from "../components/XpChart";
 import { ShareDialog } from "../components/ShareDialog";
 
-const REPO = "https://github.com/TWadi/ai-eng-lab/tree/main";
+const REPO = "https://github.com/TWadi/ai-engineering-arena/tree/main";
 const PHASE_FOLDERS: Record<string, string> = {
   rag: "rag-course", p0: "00-setup", p1: "01-foundations", p2: "02-classical-ml", p3: "03-deep-learning",
   p4: "04-llm-apps", p5: "05-agents-mcp", p6: "06-production", p7: "07-capstone",

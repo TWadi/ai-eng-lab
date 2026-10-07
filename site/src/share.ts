@@ -2,7 +2,7 @@ import type { DuelRecord } from "./duels";
 import { BADGES, type BadgeId, type PlayerStats } from "./gamify";
 import { PHASES } from "./roadmap";
 
-export const SITE_URL = "https://twadi.github.io/ai-eng-lab/";
+export const SITE_URL = "https://twadi.github.io/ai-engineering-arena/";
 export const CARD_W = 1200;
 export const CARD_H = 627;
 
@@ -87,10 +87,10 @@ export function buildCard(kind: CardKind, input: CardInput): CardModel {
       stats: [{ label: "Earned for", value: badge?.description ?? "", wide: true }, ...baseStats.slice(0, 2)],
       featuredBadge: kind.id,
       caption:
-        `Unlocked the "${badgeName}" badge (${(badge?.description ?? "").toLowerCase()}) in our AI Engineering Lab. ` +
+        `Unlocked the "${badgeName}" badge (${(badge?.description ?? "").toLowerCase()}) in our AI Engineering Arena. ` +
         `Three of us are working through a 40-week path from Python to production LLM apps, with quests, quizzes and duels to keep each other going. ` +
         `Now level ${level.level}, ${level.title}, with ${stats.xp} XP.\n\n${SITE_URL}\n${tags}`,
-      fileName: `ai-eng-lab-${slug(handle)}-badge-${slug(badgeName)}.png`,
+      fileName: `ai-engineering-arena-${slug(handle)}-badge-${slug(badgeName)}.png`,
     };
   }
 
@@ -107,20 +107,20 @@ export function buildCard(kind: CardKind, input: CardInput): CardModel {
         `Phase cleared: ${title}. ` +
         (phase ? `${phase.goal} ` : "") +
         `Next up on our 40-week AI engineering path. Level ${level.level} (${level.title}), ${stats.xp} XP so far.\n\n${SITE_URL}\n${tags}`,
-      fileName: `ai-eng-lab-${slug(handle)}-phase-${slug(title)}.png`,
+      fileName: `ai-engineering-arena-${slug(handle)}-phase-${slug(title)}.png`,
     };
   }
 
   return {
     ...common,
-    eyebrow: "AI Engineering Lab",
+    eyebrow: "AI Engineering Arena",
     headline: `Level ${level.level} · ${level.title}`,
     stats: baseStats,
     featuredBadge: null,
     caption:
-      `Level ${level.level} (${level.title}) in our AI Engineering Lab: ${stats.xp} XP, ${stats.itemsDone} quests done, ` +
+      `Level ${level.level} (${level.title}) in our AI Engineering Arena: ${stats.xp} XP, ${stats.itemsDone} quests done, ` +
       `${earned.length} badge${earned.length === 1 ? "" : "s"}, ${record.wins} duel win${record.wins === 1 ? "" : "s"}. ` +
       `Three friends learning AI engineering in public, from Python basics to shipping AI agents.\n\n${SITE_URL}\n${tags}`,
-    fileName: `ai-eng-lab-${slug(handle)}-level-${level.level}.png`,
+    fileName: `ai-engineering-arena-${slug(handle)}-level-${level.level}.png`,
   };
 }

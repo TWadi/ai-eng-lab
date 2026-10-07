@@ -80,7 +80,7 @@ export function DuelCenter({ me, duels, memberById, colorOf, hidden, onHide, onT
       const name = rival?.display_name || rival?.github_username || "Someone";
       if (d.status === "pending" && d.opponent === me.id && before === undefined) {
         notify(`${name} challenges you to a ${d.kind === "code" ? "code race" : "duel"}!`, `${itemTitle(d)} · open the lab to accept`);
-        document.title = "(!) Duel challenge · AI Engineering Lab";
+        document.title = "(!) Duel challenge · AI Engineering Arena";
       } else if (d.status === "live" && d.challenger === me.id) {
         notify(`${name} accepted your duel!`, "It starts in 5 seconds. Jump in!");
       } else if (d.status === "declined" && d.challenger === me.id) {
@@ -90,7 +90,7 @@ export function DuelCenter({ me, duels, memberById, colorOf, hidden, onHide, onT
   }, [duels.loaded, duels.duels, me.id, memberById, onToast]);
 
   useEffect(() => {
-    if (current?.state !== "invite-in") document.title = "AI Engineering Lab";
+    if (current?.state !== "invite-in") document.title = "AI Engineering Arena";
   }, [current?.state]);
 
   const act = async (fn: () => Promise<{ ok: boolean; error?: string }>) => {
