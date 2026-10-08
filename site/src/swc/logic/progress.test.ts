@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  countDone, groupByUser, percent, phaseForWeek, weekNumber, weekStart, withItem, withoutItem,
-} from "./progress";
+import { countDone, groupByUser, percent, phaseForWeek, weekNumber, weekStart, withItem, withoutItem } from "./progress";
 import { ALL_ITEM_IDS, PHASES, START_DATE } from "./roadmap";
 
 describe("groupByUser", () => {

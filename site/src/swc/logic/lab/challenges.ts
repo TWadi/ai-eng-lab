@@ -42,3 +42,6 @@ export interface RunResult {
 export function allPassed(r: RunResult): boolean {
   return r.error === null && r.results.length > 0 && r.results.every((t) => t.ok);
 }
+
+/** What the in-browser Python runner is doing. */
+export type RunnerState = "idle" | "loading" | "running";

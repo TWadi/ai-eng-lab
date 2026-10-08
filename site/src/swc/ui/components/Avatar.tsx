@@ -1,4 +1,4 @@
-import type { Profile } from "../../../bsw/supabase";
+import type { Profile } from "../../logic/types";
 
 interface Props {
   readonly member: Profile | undefined;

@@ -2,9 +2,9 @@ import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { duelTitle } from "../../logic/activity";
 import { activeDuel, INVITE_TTL_MS, type Duel } from "../../logic/duels";
 import type { DuelsState } from "../../../rte/useDuels";
-import type { Profile } from "../../../bsw/supabase";
 import { Avatar } from "./Avatar";
 import { DuelArena } from "./DuelArena";
+import type { Profile } from "../../logic/types";
 
 // The race arena brings the code editor and Python runner, so it loads only when a race starts.
 const RaceArena = lazy(() => import("../lab/RaceArena"));

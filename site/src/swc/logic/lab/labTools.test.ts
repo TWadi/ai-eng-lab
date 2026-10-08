@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { ragMessages } from "../../../bsw/compute/llm";
-import { charsPerToken, showWhitespace, TOKENIZERS } from "../../../bsw/compute/tokenizer";
 import { CHALLENGES } from "./challenges";
+import { ragMessages } from "./llm";
+import { charsPerToken, showWhitespace, TOKENIZERS } from "./tokenizer";
 
 describe("ragMessages", () => {
   it("numbers the chunks as context and asks to cite them", () => {

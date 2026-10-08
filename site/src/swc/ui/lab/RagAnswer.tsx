@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { generate, loadLlm, ragMessages, stopGenerating, type LlmDevice } from "../../../bsw/compute/llm";
+import { useRte } from "../../../rte/RteContext";
+import { ragMessages, type LlmDevice } from "../../logic/lab/llm";
 
 interface Props {
   readonly question: string;
@@ -17,6 +18,7 @@ const MAX_TOKENS = 160;
 
 /** The "G" in RAG: a small LLM running in the browser writes an answer from the retrieved chunks. */
 export function RagAnswer({ question, chunks }: Props) {
+  const { llm } = useRte();
   const [status, setStatus] = useState<Status>({ name: "idle" });
   const [device, setDevice] = useState<LlmDevice | null>(null);
   const [answer, setAnswer] = useState("");
@@ -24,15 +26,15 @@ export function RagAnswer({ question, chunks }: Props) {
   const busy = status.name === "loading" || status.name === "generating";
 
   // Leaving (or new retrieval results, which remount this) stops a generation that's still running.
-  useEffect(() => stopGenerating, []);
+  useEffect(() => llm.stop, [llm]);
 
   const run = async () => {
     setAnswer("");
     try {
       setStatus({ name: "loading", pct: null });
-      setDevice(await loadLlm({ onDevice: setDevice, onProgress: (pct) => setStatus({ name: "loading", pct }) }));
+      setDevice(await llm.load({ onDevice: setDevice, onProgress: (pct) => setStatus({ name: "loading", pct }) }));
       setStatus({ name: "generating" });
-      const text = await generate(messages, MAX_TOKENS, { onText: setAnswer });
+      const text = await llm.generate(messages, MAX_TOKENS, { onText: setAnswer });
       setAnswer(text);
       setStatus({ name: "idle" });
     } catch (err) {
@@ -55,7 +57,7 @@ export function RagAnswer({ question, chunks }: Props) {
           </p>
         </div>
         {status.name === "generating" ? (
-          <button type="button" className="btn btn-ghost" onClick={stopGenerating}>Stop</button>
+          <button type="button" className="btn btn-ghost" onClick={llm.stop}>Stop</button>
         ) : (
           <button type="button" className="btn btn-primary" onClick={() => void run()} disabled={busy || chunks.length === 0}>
             {answer ? "Generate again" : "Generate answer"}

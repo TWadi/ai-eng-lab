@@ -1,24 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { supabase } from "../bsw/supabase";
-import { dbError, type Outcome } from "./useQuizzes";
-
-export { cleanGithubInput, isGithubUsername } from "../swc/logic/players";
-
-export interface WaitingPlayer {
-  readonly github_username: string;
-  readonly display_name: string | null;
-  readonly avatar_url: string | null;
-  readonly signed_in_at: string;
-}
-
-export interface PlayersOverview {
-  /** Signed in with GitHub but not a player yet. */
-  readonly waiting: readonly WaitingPlayer[];
-  /** Signed in but turned down (they can still be let in later). */
-  readonly declined: readonly WaitingPlayer[];
-  /** Invited GitHub usernames that haven't signed in yet. */
-  readonly invited: readonly string[];
-}
+import type { Outcome, PlayersOverview } from "../swc/logic/types";
+import { useRte } from "./RteContext";
 
 export interface PlayersAdmin {
   readonly overview: PlayersOverview | null;
@@ -31,20 +13,20 @@ export interface PlayersAdmin {
 
 /** Admin-only player management. Pass enabled=false for everyone else (no calls are made). */
 export function usePlayers(enabled: boolean, onChanged: () => void): PlayersAdmin {
+  const { players } = useRte();
   const [overview, setOverview] = useState<PlayersOverview | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    if (!supabase || !enabled) return;
-    const { data, error: err } = await supabase.rpc("lab_admin_overview");
-    if (err) {
-      console.error("lab_admin_overview failed", err);
-      setError(dbError(err, "Couldn't load the player list."));
-      return;
+    if (!enabled) return;
+    const res = await players.overview();
+    if (res.ok) {
+      setError(null);
+      setOverview(res.value);
+    } else {
+      setError(res.error);
     }
-    setError(null);
-    setOverview(data as PlayersOverview);
-  }, [enabled]);
+  }, [enabled, players]);
 
   useEffect(() => {
     void refresh();
@@ -53,31 +35,19 @@ export function usePlayers(enabled: boolean, onChanged: () => void): PlayersAdmi
     return () => window.clearInterval(t);
   }, [enabled, refresh]);
 
-  const invite = useCallback(async (github: string): Promise<Outcome<{ readonly signedIn: boolean }>> => {
-    if (!supabase) return { ok: false, error: "The site isn't connected to its database." };
-    const { data, error: err } = await supabase.rpc("invite_player", { p_github: github });
-    if (err) return { ok: false, error: dbError(err, "Couldn't invite that player.") };
-    await refresh();
-    onChanged();
-    return { ok: true, value: { signedIn: Boolean((data as { signed_in?: boolean }).signed_in) } };
+  /** Run an admin action, then refresh the lists (and the board, if membership changed). */
+  const act = useCallback(<T,>(changesBoard: boolean, fn: () => Promise<Outcome<T>>) => async (): Promise<Outcome<T>> => {
+    const res = await fn();
+    if (res.ok) {
+      await refresh();
+      if (changesBoard) onChanged();
+    }
+    return res;
   }, [refresh, onChanged]);
 
-  const remove = useCallback(async (github: string): Promise<Outcome<null>> => {
-    if (!supabase) return { ok: false, error: "The site isn't connected to its database." };
-    const { error: err } = await supabase.rpc("remove_player", { p_github: github });
-    if (err) return { ok: false, error: dbError(err, "Couldn't remove that player.") };
-    await refresh();
-    onChanged();
-    return { ok: true, value: null };
-  }, [refresh, onChanged]);
-
-  const decline = useCallback(async (github: string): Promise<Outcome<null>> => {
-    if (!supabase) return { ok: false, error: "The site isn't connected to its database." };
-    const { error: err } = await supabase.rpc("decline_player", { p_github: github });
-    if (err) return { ok: false, error: dbError(err, "Couldn't decline that player.") };
-    await refresh();
-    return { ok: true, value: null };
-  }, [refresh]);
+  const invite = useCallback((github: string) => act(true, () => players.invite(github))(), [act, players]);
+  const remove = useCallback((github: string) => act(true, () => players.remove(github))(), [act, players]);
+  const decline = useCallback((github: string) => act(false, () => players.decline(github))(), [act, players]);
 
   return { overview, error, refresh, invite, remove, decline };
 }

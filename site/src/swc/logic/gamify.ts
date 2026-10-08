@@ -2,8 +2,8 @@ import { bestScores, weekStartOf, weekStats, type QuizResult } from "./activity"
 import type { ProgressByUser } from "./progress";
 import { PHASES, type Phase, type RoadmapItem } from "./roadmap";
 import { duelRecord, duelXp, type Duel } from "./duels";
-import type { ChallengeSolve } from "../../rte/useSolves";
 import { findChallenge } from "./lab/challenges";
+import type { ChallengeSolve } from "./types";
 
 /** How much XP each action is worth. Build items are worth more because they take longer. */
 export const XP = {

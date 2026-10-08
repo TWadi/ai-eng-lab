@@ -4,8 +4,8 @@ import { DUEL_XP } from "../../logic/duels";
 import type { LabData } from "../labData";
 import { href } from "../../logic/route";
 import { Avatar } from "./Avatar";
-import type { Profile } from "../../../bsw/supabase";
 import { findChallenge } from "../../logic/lab/challenges";
+import type { Profile } from "../../logic/types";
 
 export function PlayerLink({ member }: { readonly member: Profile | undefined }) {
   if (!member) return <b>Someone</b>;

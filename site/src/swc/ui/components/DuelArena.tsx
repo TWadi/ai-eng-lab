@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { supabase, type Profile } from "../../../bsw/supabase";
+import type { LiveChannel } from "../../../rte/ports";
+import { useRte } from "../../../rte/RteContext";
 import { DUEL_GRACE_MS, DUEL_LIMIT_MS, DUEL_XP, formatTime, type Duel, type DuelEntry } from "../../logic/duels";
-import type { DuelGraded, DuelsState } from "../../../rte/useDuels";
-import type { QuizQuestion } from "../../../rte/useQuizzes";
+import type { DuelsState } from "../../../rte/useDuels";
 import { Avatar } from "./Avatar";
+import type { Profile, DuelGraded, QuizQuestion } from "../../logic/types";
 
 interface Props {
   readonly duel: Duel;
@@ -30,6 +31,13 @@ interface Progress {
   readonly submitted: boolean;
 }
 
+/** Live answer count shared between the two players (never stored). */
+interface ProgressMessage {
+  readonly userId: string;
+  readonly answered: number;
+  readonly submitted: boolean;
+}
+
 const LETTERS = ["A", "B", "C", "D"];
 
 export function DuelArena({ duel, me, rival, itemTitle, duels, entries, colorOf, onClose, onWin }: Props) {
@@ -41,7 +49,8 @@ export function DuelArena({ duel, me, rival, itemTitle, duels, entries, colorOf,
   const [offset, setOffset] = useState(0);
   const [tick, setTick] = useState(Date.now());
   const [theirProgress, setTheirProgress] = useState<Progress>({ answered: 0, submitted: false });
-  const channelRef = useRef<ReturnType<NonNullable<typeof supabase>["channel"]> | null>(null);
+  const { live } = useRte();
+  const channelRef = useRef<LiveChannel<ProgressMessage> | null>(null);
   const submittedRef = useRef(false);
   const retryRef = useRef<number | undefined>(undefined);
   const celebrated = useRef(false);
@@ -57,22 +66,20 @@ export function DuelArena({ duel, me, rival, itemTitle, duels, entries, colorOf,
 
   // Live progress of both players over a broadcast channel (not stored anywhere).
   useEffect(() => {
-    if (!supabase) return;
-    const ch = supabase.channel(`duel-live-${duel.id}`, { config: { broadcast: { self: false } } });
-    ch.on("broadcast", { event: "progress" }, ({ payload }) => {
-      if (payload?.userId && payload.userId !== me.id) {
-        setTheirProgress({ answered: Number(payload.answered) || 0, submitted: Boolean(payload.submitted) });
+    const ch = live.join<ProgressMessage>(`duel-live-${duel.id}`, (msg) => {
+      if (msg?.userId && msg.userId !== me.id) {
+        setTheirProgress({ answered: Number(msg.answered) || 0, submitted: Boolean(msg.submitted) });
       }
-    }).subscribe();
+    });
     channelRef.current = ch;
     return () => {
       channelRef.current = null;
-      void supabase?.removeChannel(ch);
+      ch.leave();
     };
-  }, [duel.id, me.id]);
+  }, [live, duel.id, me.id]);
 
   const sendProgress = useCallback((answered: number, submitted: boolean) => {
-    void channelRef.current?.send({ type: "broadcast", event: "progress", payload: { userId: me.id, answered, submitted } });
+    channelRef.current?.send({ userId: me.id, answered, submitted });
   }, [me.id]);
 
   const load = useCallback(async () => {

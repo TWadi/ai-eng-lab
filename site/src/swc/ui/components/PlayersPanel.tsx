@@ -1,8 +1,9 @@
 import { useState, type FormEvent } from "react";
 import { relativeTime } from "../../logic/activity";
 import type { LabData } from "../labData";
-import { cleanGithubInput, isGithubUsername, type PlayersAdmin } from "../../../rte/usePlayers";
+import { type PlayersAdmin } from "../../../rte/usePlayers";
 import { Avatar } from "./Avatar";
+import { cleanGithubInput, isGithubUsername } from "../../logic/players";
 
 type Note = { readonly ok: boolean; readonly text: string } | null;
 

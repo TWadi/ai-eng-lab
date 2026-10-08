@@ -2,10 +2,8 @@ import type { QuizResult } from "../logic/activity";
 import type { PlayerStats } from "../logic/gamify";
 import type { ProgressByUser } from "../logic/progress";
 import type { RoadmapItem } from "../logic/roadmap";
-import type { Profile } from "../../bsw/supabase";
 import type { Duel, DuelEntry } from "../logic/duels";
-import type { ChallengeSolve } from "../../rte/useSolves";
-import type { Outcome } from "../../rte/useQuizzes";
+import type { Profile, ChallengeSolve, Outcome } from "../logic/types";
 
 /** Everything the pages need, computed once in App. */
 export interface LabData {

@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import type { Profile } from "../../../bsw/supabase";
 import type { RoadmapItem } from "../../logic/roadmap";
-import type { Outcome } from "../../../rte/useQuizzes";
 import { DUEL_XP } from "../../logic/duels";
 import { Avatar } from "./Avatar";
+import type { Profile, Outcome } from "../../logic/types";
 
 interface Props {
   readonly item: RoadmapItem;

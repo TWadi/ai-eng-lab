@@ -1,8 +1,8 @@
 import { BADGES, type PlayerStats } from "../../logic/gamify";
-import type { Profile } from "../../../bsw/supabase";
 import { Avatar } from "./Avatar";
 import { BadgeIcon } from "./BadgeIcon";
 import { href } from "../../logic/route";
+import type { Profile } from "../../logic/types";
 
 interface Props {
   readonly member: Profile;

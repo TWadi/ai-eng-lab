@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { charsPerToken, showWhitespace, tokenize, TOKENIZERS, type Tokenized } from "../../../bsw/compute/tokenizer";
+import { useRte } from "../../../rte/RteContext";
+import { charsPerToken, showWhitespace, TOKENIZERS, type Tokenized } from "../../logic/lab/tokenizer";
 
 const SAMPLE = `Tokenization isn't magic: "unbelievable" might be 1 token or 3.
 Numbers split oddly: 12345 + 67890 = 80235
@@ -16,6 +17,7 @@ interface Comparison {
 }
 
 function useTokens(model: string, text: string) {
+  const { tokenizer } = useRte();
   const [result, setResult] = useState<Tokenized | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +27,7 @@ function useTokens(model: string, text: string) {
     const ticket = ++latest.current;
     setBusy(true);
     const t = window.setTimeout(() => {
-      tokenize(model, text)
+      tokenizer.tokenize(model, text)
         .then((r) => {
           if (ticket !== latest.current) return;
           setResult(r);
@@ -47,6 +49,7 @@ function useTokens(model: string, text: string) {
 }
 
 export function TokenizerLab() {
+  const { tokenizer } = useRte();
   const [text, setText] = useState(SAMPLE);
   const [model, setModel] = useState(TOKENIZERS[0].id);
   const [showIds, setShowIds] = useState(false);
@@ -63,7 +66,7 @@ export function TokenizerLab() {
     setComparing(true);
     const rows = await Promise.all(
       TOKENIZERS.map((t) =>
-        tokenize(t.id, text)
+        tokenizer.tokenize(t.id, text)
           .then((r): Comparison => ({ id: t.id, count: r.ids.length, error: false }))
           .catch((): Comparison => ({ id: t.id, count: null, error: true })),
       ),

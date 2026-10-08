@@ -1,8 +1,8 @@
 import type { ProgressByUser } from "./progress";
 import { PHASES, type RoadmapItem } from "./roadmap";
 import type { Duel, DuelEntry } from "./duels";
-import type { ChallengeSolve } from "../../rte/useSolves";
 import { findChallenge } from "./lab/challenges";
+import type { ChallengeSolve } from "./types";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

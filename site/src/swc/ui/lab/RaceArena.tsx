@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { supabase, type Profile } from "../../../bsw/supabase";
+import type { DuelPort, LiveChannel } from "../../../rte/ports";
+import { useRte } from "../../../rte/RteContext";
 import { DUEL_GRACE_MS, DUEL_XP, RACE_LIMIT_MS, formatTime, type Duel, type DuelEntry } from "../../logic/duels";
 import type { DuelsState } from "../../../rte/useDuels";
 import { Avatar } from "../components/Avatar";
-import { allPassed, findChallenge, type Challenge, type RunResult } from "../../logic/lab/challenges";
+import { allPassed, findChallenge, type Challenge, type RunResult, type RunnerState } from "../../logic/lab/challenges";
 import { CodeEditor } from "./CodeEditor";
 import { Prose } from "./Prose";
-import { preloadPython, runChallenge, type RunnerState } from "../../../bsw/compute/pyRunner";
 import { TestResults } from "./TestResults";
+import type { Profile } from "../../logic/types";
 
 interface Props {
   readonly duel: Duel;
@@ -30,6 +31,14 @@ type Phase =
   | { readonly name: "error"; readonly message: string };
 
 interface Progress {
+  readonly passed: number;
+  readonly total: number;
+  readonly finished: boolean;
+}
+
+/** Live test count shared between the two racers (never stored). */
+interface RaceProgressMessage {
+  readonly userId: string;
   readonly passed: number;
   readonly total: number;
   readonly finished: boolean;
@@ -59,24 +68,18 @@ function clock(ms: number): string {
 }
 
 /** After a race, both entries (with code) are readable; fetch them for the side-by-side. */
-function useSolutions(duelId: string, decided: boolean): ReadonlyMap<string, string> {
+function useSolutions(duels: DuelPort, duelId: string, decided: boolean): ReadonlyMap<string, string> {
   const [codes, setCodes] = useState<ReadonlyMap<string, string>>(new Map());
   useEffect(() => {
-    if (!decided || !supabase) return;
+    if (!decided) return;
     let active = true;
-    void supabase.from("duel_entries").select("user_id,answers").eq("duel_id", duelId).then(({ data, error }) => {
-      if (!active) return;
-      if (error) {
-        console.error("Failed to load race solutions", error);
-        return;
-      }
-      const rows = (data ?? []) as Array<{ user_id: string; answers: { code?: unknown } | null }>;
-      setCodes(new Map(rows.flatMap((r) => (typeof r.answers?.code === "string" ? [[r.user_id, r.answers.code] as const] : []))));
+    void duels.loadRaceSolutions(duelId).then((res) => {
+      if (active && res.ok) setCodes(res.value);
     });
     return () => {
       active = false;
     };
-  }, [duelId, decided]);
+  }, [duels, duelId, decided]);
   return codes;
 }
 
@@ -92,7 +95,8 @@ export default function RaceArena({ duel, me, rival, duels, entries, colorOf, on
   const [tick, setTick] = useState(Date.now());
   const [theirs, setTheirs] = useState<Progress>({ passed: 0, total: 0, finished: false });
   const [confirmQuit, setConfirmQuit] = useState(false);
-  const channelRef = useRef<ReturnType<NonNullable<typeof supabase>["channel"]> | null>(null);
+  const { live, python, duels: duelPort } = useRte();
+  const channelRef = useRef<LiveChannel<RaceProgressMessage> | null>(null);
   const submittedRef = useRef(false);
   const retryRef = useRef<number | undefined>(undefined);
   const celebrated = useRef(false);
@@ -100,35 +104,33 @@ export default function RaceArena({ duel, me, rival, duels, entries, colorOf, on
   const rivalName = rival?.display_name || rival?.github_username || "your rival";
   const decided = duel.status === "done" || duel.status === "expired";
   const won = duel.status === "done" && duel.winner === me.id;
-  const solutions = useSolutions(duel.id, decided);
+  const solutions = useSolutions(duelPort, duel.id, decided);
   const revealed = duel.challenge_id ? findChallenge(duel.challenge_id) : undefined;
   const challenge = phase.name === "racing" ? phase.challenge : revealed;
 
   useEffect(() => {
     dialogRef.current?.showModal();
-    preloadPython();
+    python.preload();
     const t = window.setInterval(() => setTick(Date.now()), 250);
     return () => window.clearInterval(t);
   }, []);
 
   // Live test progress of both players over a broadcast channel (not stored anywhere).
   useEffect(() => {
-    if (!supabase) return;
-    const ch = supabase.channel(`race-live-${duel.id}`, { config: { broadcast: { self: false } } });
-    ch.on("broadcast", { event: "progress" }, ({ payload }) => {
-      if (payload?.userId && payload.userId !== me.id) {
-        setTheirs({ passed: Number(payload.passed) || 0, total: Number(payload.total) || 0, finished: Boolean(payload.finished) });
+    const ch = live.join<RaceProgressMessage>(`race-live-${duel.id}`, (msg) => {
+      if (msg?.userId && msg.userId !== me.id) {
+        setTheirs({ passed: Number(msg.passed) || 0, total: Number(msg.total) || 0, finished: Boolean(msg.finished) });
       }
-    }).subscribe();
+    });
     channelRef.current = ch;
     return () => {
       channelRef.current = null;
-      void supabase?.removeChannel(ch);
+      ch.leave();
     };
-  }, [duel.id, me.id]);
+  }, [live, duel.id, me.id]);
 
   const sendProgress = useCallback((passed: number, total: number, finished: boolean) => {
-    void channelRef.current?.send({ type: "broadcast", event: "progress", payload: { userId: me.id, passed, total, finished } });
+    channelRef.current?.send({ userId: me.id, passed, total, finished });
   }, [me.id]);
 
   const load = useCallback(async () => {
@@ -188,7 +190,7 @@ export default function RaceArena({ duel, me, rival, duels, entries, colorOf, on
   const run = useCallback(async () => {
     if (phase.name !== "racing" || runner !== "idle" || Date.now() + offset >= phase.endsAt) return;
     const c = phase.challenge;
-    const r = await runChallenge(code, c.tests, setRunner);
+    const r = await python.run(code, c.tests, setRunner);
     setResult(r);
     const passed = r.results.filter((t) => t.ok).length;
     if (allPassed(r)) void send(true, code, c);

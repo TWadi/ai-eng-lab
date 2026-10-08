@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import type { GradedQuiz, OpenQuiz, Outcome } from "../../../rte/useQuizzes";
+import type { GradedQuiz, OpenQuiz, Outcome } from "../../logic/types";
 
 interface Props<R extends GradedQuiz> {
   readonly eyebrow: string;

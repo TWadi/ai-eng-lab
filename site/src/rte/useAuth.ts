@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import type { Session } from "@supabase/supabase-js";
-import { supabase, type Profile } from "../bsw/supabase";
 import { readAuthError } from "../swc/logic/authError";
+import type { AuthSession, Profile } from "../swc/logic/types";
+import { useRte } from "./RteContext";
 
 export interface AuthState {
-  readonly session: Session | null;
+  readonly session: AuthSession | null;
+  /** Own profile; is_member tells whether they've been let in. */
   readonly profile: Profile | null;
   readonly loading: boolean;
   readonly error: string | null;
@@ -12,88 +13,54 @@ export interface AuthState {
   readonly signOut: () => Promise<void>;
 }
 
-async function loadProfile(userId: string): Promise<Profile | null> {
-  if (!supabase) return null;
-  // Non-members can't read profiles (RLS), so a signed-in visitor gets null here.
-  const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).maybeSingle();
-  if (error) {
-    console.error("Failed to load profile", error);
-    return null;
-  }
-  return data as Profile | null;
-}
-
 export function useAuth(): AuthState {
-  const [session, setSession] = useState<Session | null>(null);
+  const { auth, configured } = useRte();
+  const [session, setSession] = useState<AuthSession | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(Boolean(supabase));
+  const [loading, setLoading] = useState(configured);
   const [error] = useState(() => readAuthError(window.location.search, window.location.hash));
 
   useEffect(() => {
-    if (error) {
-      // Clean the URL so a refresh doesn't show the old error again.
-      window.history.replaceState(null, "", window.location.pathname);
-    }
+    // Clean the URL so a refresh doesn't show the old sign-in error again.
+    if (error) window.history.replaceState(null, "", window.location.pathname);
   }, [error]);
 
   useEffect(() => {
-    if (!supabase) return;
     let active = true;
-
-    const apply = async (s: Session | null) => {
-      const p = s ? await loadProfile(s.user.id) : null;
+    const apply = async (s: AuthSession | null) => {
+      const p = s ? await auth.loadProfile(s.userId) : null;
       if (!active) return;
       setSession(s);
       setProfile(p);
       setLoading(false);
     };
-
-    supabase.auth.getSession().then(({ data }) => apply(data.session));
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
-      // Defer: Supabase recommends not awaiting other calls inside this callback.
-      setTimeout(() => apply(s), 0);
-    });
+    void auth.currentSession().then(apply);
+    const stop = auth.onSessionChange((s) => void apply(s));
     return () => {
       active = false;
-      sub.subscription.unsubscribe();
+      stop();
     };
-  }, []);
+  }, [auth]);
 
-  // When an admin lets this user in, their profile becomes readable: pick it up without a reload.
-  const userId = session?.user.id ?? null;
+  // When an admin lets this user in, pick it up without a reload.
+  const userId = session?.userId ?? null;
+  const isMember = profile?.is_member ?? false;
   useEffect(() => {
-    const client = supabase;
-    if (!client || !userId) return;
+    if (!userId) return;
     let active = true;
     const refresh = async () => {
-      const p = await loadProfile(userId);
+      const p = await auth.loadProfile(userId);
       if (active) setProfile(p);
     };
-    const channel = client
-      .channel(`my-profile-${userId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "profiles", filter: `id=eq.${userId}` }, () => void refresh())
-      .subscribe();
+    const stop = auth.watchProfile(userId, () => void refresh());
     // Fallback in case realtime is unavailable: check every 20 s while waiting to be let in.
-    const t = profile?.is_member ? undefined : window.setInterval(() => void refresh(), 20_000);
+    const t = isMember ? undefined : window.setInterval(() => void refresh(), 20_000);
     return () => {
       active = false;
       window.clearInterval(t);
-      client.removeChannel(channel);
+      stop();
     };
-  }, [userId, profile?.is_member]);
+  }, [auth, userId, isMember]);
 
-  const signIn = async () => {
-    if (!supabase) return;
-    const redirectTo = window.location.origin + import.meta.env.BASE_URL;
-    const { error } = await supabase.auth.signInWithOAuth({ provider: "github", options: { redirectTo } });
-    if (error) console.error("GitHub sign-in failed", error);
-  };
-
-  const signOut = async () => {
-    if (!supabase) return;
-    const { error } = await supabase.auth.signOut();
-    if (error) console.error("Sign-out failed", error);
-  };
-
-  return { session, profile, loading, error, signIn, signOut };
+  return { session, profile, loading, error, signIn: auth.signIn, signOut: auth.signOut };
 }

@@ -3,10 +3,10 @@ import { findRoadmapItem } from "../../logic/activity";
 import type { LabData } from "../labData";
 import { href } from "../../logic/route";
 import { Avatar } from "../components/Avatar";
-import { allPassed, type Challenge, type RunResult } from "../../logic/lab/challenges";
+import { allPassed, type Challenge, type RunResult, type RunnerState } from "../../logic/lab/challenges";
 import { CodeEditor } from "./CodeEditor";
 import { Prose } from "./Prose";
-import { runChallenge, type RunnerState } from "../../../bsw/compute/pyRunner";
+import { useRte } from "../../../rte/RteContext";
 import { TestResults } from "./TestResults";
 
 const DRAFT_KEY = (id: string) => `ai-eng-lab:draft:${id}`;
@@ -36,14 +36,15 @@ export function ChallengeView({ challenge, data }: { readonly challenge: Challen
   const solvedBy = data.members.filter((m) => data.solves.some((s) => s.user_id === m.id && s.challenge_id === challenge.id));
   const iSolved = Boolean(me && solvedBy.some((m) => m.id === me.id));
   const item = findRoadmapItem(challenge.item);
+  const { python } = useRte();
 
   const run = useCallback(async () => {
     if (state !== "idle") return;
     setResult(null);
-    const r = await runChallenge(code, challenge.tests, setState);
+    const r = await python.run(code, challenge.tests, setState);
     setResult(r);
     if (allPassed(r) && data.onSolved) data.onSolved(challenge.id);
-  }, [state, code, challenge, data]);
+  }, [state, code, challenge, data, python]);
 
   const onChange = (next: string) => {
     setCode(next);

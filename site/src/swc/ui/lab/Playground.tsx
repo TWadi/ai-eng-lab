@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { embed } from "../../../bsw/compute/embedder";
+import { useRte } from "../../../rte/RteContext";
 import { RagAnswer } from "./RagAnswer";
 import { chunkText, cosine, pca2d, rank, type Vec } from "../../logic/lab/vectors";
 
@@ -18,11 +18,12 @@ type Load = { readonly busy: boolean; readonly pct: number | null; readonly erro
 const IDLE: Load = { busy: false, pct: null, error: null };
 
 function useEmbed() {
+  const { embedder } = useRte();
   const [load, setLoad] = useState<Load>(IDLE);
   const run = async (texts: string[]): Promise<Vec[] | null> => {
     setLoad({ busy: true, pct: null, error: null });
     try {
-      const vectors = await embed(texts, (pct) => setLoad({ busy: true, pct, error: null }));
+      const vectors = await embedder.embed(texts, (pct) => setLoad({ busy: true, pct, error: null }));
       setLoad(IDLE);
       return vectors;
     } catch (err) {

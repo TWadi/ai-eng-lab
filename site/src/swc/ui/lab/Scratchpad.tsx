@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CodeEditor } from "./CodeEditor";
-import { restartKernel, runCell, type CellOutput, type KernelState } from "../../../bsw/compute/kernel";
+import { useRte } from "../../../rte/RteContext";
+import type { CellOutput, KernelState } from "../../logic/lab/kernel";
 
 interface Cell {
   readonly id: string;
@@ -19,6 +20,7 @@ const STARTER: readonly string[] = [
   `# A Python scratchpad that runs in your browser, like a mini Jupyter.
 # Variables carry over between cells. Shift + Enter runs a cell.
 import numpy as np
+import type { CellOutput, KernelState } from "../../logic/lab/kernel";
 
 a = np.array([0.2, 0.9, 0.1])
 b = np.array([0.25, 0.8, 0.0])
@@ -82,6 +84,7 @@ function Output({ result }: { readonly result: CellResult }) {
 }
 
 export function Scratchpad() {
+  const { kernel: python } = useRte();
   const [cells, setCells] = useState<readonly Cell[]>(loadCells);
   const [results, setResults] = useState<Readonly<Record<string, CellResult>>>({});
   const [running, setRunning] = useState<string | null>(null);
@@ -98,14 +101,14 @@ export function Scratchpad() {
   }, [cells]);
 
   // Leaving the scratchpad stops the kernel and frees its memory (variables are lost, cells are kept).
-  useEffect(() => () => restartKernel(""), []);
+  useEffect(() => () => python.restart(""), [python]);
 
   const runOne = useCallback(async (id: string): Promise<boolean> => {
     const cell = cellsRef.current.find((c) => c.id === id);
     if (!cell) return false;
     setRunning(id);
     setStarted(true);
-    const out = await runCell(cell.code, (state, detail) => setKernel({ state, detail }));
+    const out = await python.runCell(cell.code, (state, detail) => setKernel({ state, detail }));
     counter.current += 1;
     setResults((cur) => ({ ...cur, [id]: { n: counter.current, out } }));
     setRunning(null);
@@ -122,7 +125,7 @@ export function Scratchpad() {
   }, [runOne]);
 
   const restart = () => {
-    restartKernel();
+    python.restart();
     counter.current = 0;
     setResults({});
     setStarted(false);

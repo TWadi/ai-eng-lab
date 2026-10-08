@@ -1,6 +1,4 @@
-import type { ChallengeTest, RunResult } from "../../swc/logic/lab/challenges";
-
-export type RunnerState = "idle" | "loading" | "running";
+import type { ChallengeTest, RunResult, RunnerState } from "../../swc/logic/lab/challenges";
 
 /** Max time for one run once Python is loaded. Loading itself (a one-time ~10 MB download) is not timed. */
 const RUN_TIMEOUT_MS = 8000;

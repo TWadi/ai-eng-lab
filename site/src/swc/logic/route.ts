@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { PHASES } from "./roadmap";
 
 export type Page = "dashboard" | "roadmap" | "activity" | "player" | "lab";
@@ -33,17 +32,4 @@ export function href(route: Route): string {
   if (route.page === "player") return `#/player/${route.player ?? ""}`;
   if (route.page === "lab") return route.lab ? `#/lab/${route.lab}` : "#/lab";
   return route.phase ? `#/${route.page}/${route.phase}` : `#/${route.page}`;
-}
-
-export function useRoute(): Route {
-  const [route, setRoute] = useState(() => parseRoute(window.location.hash));
-  useEffect(() => {
-    const onChange = () => {
-      setRoute(parseRoute(window.location.hash));
-      window.scrollTo({ top: 0 });
-    };
-    window.addEventListener("hashchange", onChange);
-    return () => window.removeEventListener("hashchange", onChange);
-  }, []);
-  return route;
 }

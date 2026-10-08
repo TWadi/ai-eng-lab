@@ -9,8 +9,7 @@ import { useSolves } from "../rte/useSolves";
 import { findChallenge } from "../swc/logic/lab/challenges";
 import { PLAYER_COLORS, type LabData } from "../swc/ui/labData";
 import { PHASES, type RoadmapItem } from "../swc/logic/roadmap";
-import { useRoute } from "../swc/logic/route";
-import { supabase } from "../bsw/supabase";
+import { useRte } from "../rte/RteContext";
 import { QuizDialog } from "../swc/ui/components/QuizDialog";
 import { ChallengeDialog } from "../swc/ui/components/ChallengeDialog";
 import { ProfilePage } from "../swc/ui/pages/ProfilePage";
@@ -20,6 +19,7 @@ import { TopBar } from "../swc/ui/components/TopBar";
 import { ActivityPage } from "../swc/ui/pages/ActivityPage";
 import { DashboardPage } from "../swc/ui/pages/DashboardPage";
 import { RoadmapPage } from "../swc/ui/pages/RoadmapPage";
+import { useRoute } from "../rte/useRoute";
 
 // The Lab pulls in a code editor and is only needed on its own page.
 const LabPage = lazy(() => import("../swc/ui/lab/LabPage"));
@@ -32,7 +32,8 @@ interface Toast {
 
 export function App() {
   const auth = useAuth();
-  const { members, progress, loading, error, toggle, reloadMembers } = useProgress();
+  const { configured } = useRte();
+  const { members, progress, loading, error, markDone, reloadMembers } = useProgress();
   const quizzes = useQuizzes();
   const duels = useDuels();
   const solveState = useSolves();
@@ -122,9 +123,10 @@ export function App() {
           popFrom(el);
         }
       }
-      void toggle(me.id, itemId, done);
+      // Finished lessons stay finished: only marking done is possible.
+      if (done) void markDone(me.id, itemId);
     },
-    [me, progress, toggle],
+    [me, progress, markDone],
   );
 
   const data: LabData = {
@@ -145,13 +147,13 @@ export function App() {
   return (
     <div className="app">
       <TopBar
-        page={route.page} auth={auth} enabled={Boolean(supabase)} myStats={myStats} myColor={me ? colorOf(me.id) : "var(--edge)"}
+        page={route.page} auth={auth} enabled={configured} myStats={myStats} myColor={me ? colorOf(me.id) : "var(--edge)"}
         invites={invites.length}
         onBell={() => (invites[0] ? showInvite(invites[0].id) : undefined)}
       />
 
       <main className="wrap" id="main">
-        {!supabase && <p className="banner">Progress tracking isn't connected. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY (see site/README.md).</p>}
+        {!configured && <p className="banner">Progress tracking isn't connected. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY (see site/README.md).</p>}
         {signedInNonMember && (
           <p className="banner">
             You're signed in. To play (tick quests, take quizzes, duel), ask TWadi or Ghassen to let you in. This page unlocks by itself once you're in. Until then you can watch the board.

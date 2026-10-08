@@ -32,6 +32,8 @@ jobs:
           cache: npm
           cache-dependency-path: site/package-lock.json
       - run: npm ci
+      - name: Architecture rules (layers, no cycles, Supabase only in bsw/)
+        run: npm run lint:arch
       - run: npm test
       - run: npm run build
 
