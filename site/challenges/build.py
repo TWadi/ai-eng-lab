@@ -4,7 +4,7 @@ Usage (from the repo root):  python site/challenges/build.py
 
 Checks every challenge: the reference solution passes all tests, and the starter code fails at least one.
 Then writes:
-- site/src/lab/challenges.gen.json  (everything except the solutions)
+- site/src/swc/logic/lab/challenges.gen.json  (everything except the solutions)
 - site/public/harness.py            (served next to the site, loaded into Pyodide)
 """
 
@@ -20,7 +20,7 @@ from harness import run_tests
 from rag import CHALLENGES
 
 XP = {"easy": 20, "medium": 30, "hard": 50}
-OUT_JSON = HERE.parent / "src" / "lab" / "challenges.gen.json"
+OUT_JSON = HERE.parent / "src" / "swc" / "logic" / "lab" / "challenges.gen.json"
 OUT_HARNESS = HERE.parent / "public" / "harness.py"
 
 

@@ -17,7 +17,7 @@ jobs:
       - run: uv run ruff check .
       - run: uv run pytest
       - name: Validate coding challenges (reference solutions pass, starters fail)
-        run: uv run python site/challenges/build.py && git diff --exit-code site/src/lab/challenges.gen.json site/public/harness.py
+        run: uv run python site/challenges/build.py && git diff --exit-code site/src/swc/logic/lab/challenges.gen.json site/public/harness.py
 
   site:
     runs-on: ubuntu-latest
