@@ -60,11 +60,11 @@ end $$;
 
 -- Correct answers for an attempt / duel, read with superuser rights from the hidden key tables.
 create or replace function tests.quiz_answers(p_attempt uuid) returns int[] language sql as $$
-  select array_agg(v::int order by o) from public.quiz_keys k, jsonb_array_elements_text(k.answer_indexes) with ordinality as a(v, o)
+  select array_agg(v::int order by o) from private.quiz_keys k, jsonb_array_elements_text(k.answer_indexes) with ordinality as a(v, o)
    where k.attempt_id = p_attempt
 $$;
 create or replace function tests.duel_answers(p_duel uuid) returns int[] language sql as $$
-  select array_agg(v::int order by o) from public.duel_keys k, jsonb_array_elements_text(k.answer_indexes) with ordinality as a(v, o)
+  select array_agg(v::int order by o) from private.duel_keys k, jsonb_array_elements_text(k.answer_indexes) with ordinality as a(v, o)
    where k.duel_id = p_duel
 $$;
 
