@@ -34,3 +34,22 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+
+  database:
+    # Replays every migration on a fresh PostgreSQL (with a Supabase shim) and runs the SQL tests.
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Migrations + SQL tests
+        run: bash supabase/tests/run.sh
+        env:
+          PSQL: psql -h localhost -U postgres
+          PGPASSWORD: postgres
