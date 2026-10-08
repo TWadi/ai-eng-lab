@@ -41,7 +41,7 @@ describe("race challenges", () => {
     const dir = new URL("../../../supabase/migrations/", import.meta.url);
     const sql = readdirSync(dir).map((f) => readFileSync(new URL(f, dir), "utf8")).join("\n");
     const listed = new Set(
-      [...sql.matchAll(/insert into public\.race_challenges \(id\) values([\s\S]*?);/g)]
+      [...sql.matchAll(/insert into public\.(?:race_)?challenges \(id\) values([\s\S]*?);/g)]
         .flatMap((m) => [...m[1].matchAll(/'([a-z0-9-]+)'/g)].map((x) => x[1])),
     );
     expect(CHALLENGES.map((c) => c.id).filter((id) => !listed.has(id))).toEqual([]);

@@ -15,7 +15,7 @@ select tests.eq(jsonb_array_length(:'quiz'::jsonb -> 'questions'), 5, '5 questio
 select tests.eq((select bool_and(jsonb_array_length(x -> 'options') = 4 and not (x ? 'answer_index'))
                    from jsonb_array_elements(:'quiz'::jsonb -> 'questions') x), true, 'options only, no answers');
 select :'quiz'::jsonb ->> 'id' as attempt \gset
-select tests.throws($$select * from public.quiz_keys$$, 'permission denied');
+select tests.throws($$select * from private.quiz_keys$$, 'permission denied');
 
 -- The box can't be ticked before passing.
 select tests.throws(format($$insert into public.progress (user_id, item_id) values (%L, 'rag-1')$$, :'q'), 'row-level security');

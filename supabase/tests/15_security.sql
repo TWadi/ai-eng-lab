@@ -52,8 +52,8 @@ select tests.throws(format($$insert into public.duels (kind, item_id, challenger
 select tests.as_user(:'a');
 select tests.throws($$update public.profiles set is_admin = true$$, 'permission denied');
 select tests.throws($$update public.progress set done_at = now()$$, 'permission denied');
-select tests.throws($$delete from public.members$$, 'permission denied');
-select tests.throws($$select * from public.admins$$, 'permission denied');
+select tests.throws($$delete from private.members$$, 'permission denied');
+select tests.throws($$select * from private.admins$$, 'permission denied');
 select tests.throws($$truncate public.progress$$, 'permission denied');
 select tests.as_postgres();
 

@@ -6,7 +6,7 @@ select tests.user('sam') as s \gset
 select tests.as_user(:'r');
 select public.create_race(:'s') ->> 'id' as race \gset
 select tests.eq((select challenge_id from public.duels where id = :'race'), null, 'challenge is secret before the end');
-select tests.throws($$select * from public.duel_keys$$, 'permission denied');
+select tests.throws($$select * from private.duel_keys$$, 'permission denied');
 select tests.as_user(:'s');
 select public.respond_duel(:'race', true);
 select tests.as_postgres();
@@ -14,7 +14,7 @@ update public.duels set starts_at = now() - interval '1 second' where id = :'rac
 
 select tests.as_user(:'r');
 select public.start_duel(:'race') ->> 'challenge_id' as cid \gset
-select tests.eq((select count(*) from public.race_challenges where id = :'cid')::int, 1, 'start reveals a real challenge');
+select tests.eq((select count(*) from public.challenges where id = :'cid')::int, 1, 'start reveals a real challenge');
 select tests.throws(format($$select public.submit_duel(%L, array[0,0,0,0,0])$$, :'race'), 'code race');
 select tests.eq((public.submit_race(:'race', true, 'def f(): pass') ->> 'score')::int, 1, 'rita passes');
 select tests.as_anon();

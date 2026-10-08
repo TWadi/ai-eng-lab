@@ -22,7 +22,7 @@ export function useProgress(): ProgressState {
 
   const reloadMembers = useCallback(async () => {
     if (!supabase) return;
-    const { data, error: err } = await supabase.from("profiles").select("*").order("created_at");
+    const { data, error: err } = await supabase.from("profiles").select("*").eq("is_member", true).order("created_at");
     if (err) console.error("Failed to reload players", err);
     else setMembers(data as Profile[]);
   }, []);
@@ -34,7 +34,7 @@ export function useProgress(): ProgressState {
 
     (async () => {
       const [m, p] = await Promise.all([
-        client.from("profiles").select("*").order("created_at"),
+        client.from("profiles").select("*").eq("is_member", true).order("created_at"),
         client.from("progress").select("user_id,item_id,done_at"),
       ]);
       if (!active) return;

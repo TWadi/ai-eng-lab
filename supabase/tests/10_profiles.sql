@@ -23,8 +23,8 @@ select tests.as_postgres();
 
 -- The allow-lists themselves are unreadable through the API.
 select tests.as_user((select id from public.profiles where github_username = 'TWadi'));
-select tests.throws('select * from public.members', 'permission denied');
-select tests.throws('select * from public.admins', 'permission denied');
+select tests.throws('select * from private.members', 'permission denied');
+select tests.throws('select * from private.admins', 'permission denied');
 select tests.as_postgres();
 
 rollback;
