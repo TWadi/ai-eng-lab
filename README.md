@@ -4,6 +4,8 @@
 
 👉 **Live:** https://twadi.github.io/ai-engineering-arena/
 
+📐 **[Software architecture](docs/architecture.md)** · 🗄️ **[Database schema](docs/database.md)** · 🧭 **[Decision records](docs/adr/)** · 🔒 **[Security](SECURITY.md)**
+
 ![The dashboard: leaderboard, levels, streaks and badges](docs/dashboard.png)
 
 ## Our story
@@ -73,22 +75,39 @@ Friends are welcome to join: sign in with GitHub, and one of us lets you in.
   - Pyodide for Python.
   - transformers.js for embeddings, tokenizers and a local Qwen2.5 LLM.
   - No paid APIs, no API keys.
-- **CI:** GitHub Actions runs the Python tests, checks every coding challenge against its reference solution, then tests and builds the site.
+- **CI:** GitHub Actions runs:
+  - the Python tests;
+  - a check of every coding challenge against its reference solution;
+  - the architecture rules;
+  - the site's tests and build;
+  - a replay of every database migration on a fresh Postgres, followed by the SQL test suite.
 
 ## Repo layout
 
 ```
 ai-engineering-arena/
-├── rag-course/, 00-setup/ … 07-capstone/
-│   ├── README.md            goal, checklist and ship criteria for the phase
-│   └── <github-username>/   each person's own notebooks and code
-├── shared/                  Python code we both reuse (with tests)
-├── site/                    the arena website (React + Supabase)
-│   └── challenges/          coding challenges, written in Python with reference solutions
-├── supabase/                database migrations and the quiz question bank
-├── tests/                   tests for shared/, run in CI on every PR
-└── pyproject.toml           Python dependencies, managed with uv
+├── rag-course/, 00-setup/ … 07-capstone/   our learning journey: checklist + each person's notebooks per phase
+├── site/                                    the arena website
+│   ├── src/app/          composition root (wires the basic software into the RTE)
+│   ├── src/swc/ui/       application components and pages
+│   ├── src/swc/logic/    pure rules: XP, levels, duels, quiz pass, lab maths, domain types
+│   ├── src/rte/          runtime environment: typed ports + hooks
+│   ├── src/bsw/          basic software: Supabase adapters, realtime, Python/AI workers
+│   └── challenges/       coding challenges (Python, with reference solutions)
+├── supabase/
+│   ├── migrations/       the database, built only from these (public API + private internals)
+│   ├── tests/            SQL test suite, replayed on a fresh Postgres in CI
+│   └── quiz-bank/        the question bank source
+├── docs/                 architecture, database schema, decision records
+├── shared/, tests/       Python code we both reuse, with tests
+└── pyproject.toml        Python dependencies, managed with uv
 ```
+
+The frontend follows an AUTOSAR-style layering:
+- Application components never touch the database or workers directly; they go through typed ports in the RTE.
+- CI fails the build on any layer violation.
+
+Details are in [docs/architecture.md](docs/architecture.md).
 
 ## Run it yourself
 
