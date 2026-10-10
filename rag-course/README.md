@@ -26,20 +26,37 @@ Playlist: https://www.youtube.com/playlist?list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_Vo
 
 The course code is in [harishneel1/rag-for-beginners](https://github.com/harishneel1/rag-for-beginners). These steps open it in Jupyter at `http://localhost:8888`, like in the videos. They're written for #12 (multi-modal RAG).
 
-1. **System tools** for PDF parsing and OCR (one time):
+1. **System tools** for PDF parsing and OCR (one time). Run only the lines for your OS.
+
+   macOS:
 
    ```bash
-   brew install poppler tesseract libmagic                    # macOS
-   sudo apt-get install poppler-utils tesseract-ocr libmagic1 # Ubuntu / Debian / WSL
-   choco install poppler tesseract                            # Windows (open a new terminal afterwards)
+   brew install poppler tesseract libmagic
    ```
 
-2. **Python packages and the course code**, from the root of this repo:
+   Ubuntu / Debian / WSL:
+
+   ```bash
+   sudo apt-get install poppler-utils tesseract-ocr libmagic1
+   ```
+
+   Windows (Command Prompt or PowerShell), then open a new terminal:
+
+   ```bat
+   winget install --id oschwartz10612.Poppler -e
+   winget install --id UB-Mannheim.TesseractOCR -e
+   ```
+
+   Check with `pdftoppm -v` and `tesseract --version`. If Windows says `tesseract` is not recognized, run `set PATH=%PATH%;C:\Program Files\Tesseract-OCR` in that Command Prompt before step 4 (or add that folder to your user PATH once in *Edit environment variables for your account*).
+
+2. **Python packages and the course code.** `cd` into the root of this repo first (the folder with `pyproject.toml`), then:
 
    ```bash
    uv sync --group rag
-   git clone https://github.com/harishneel1/rag-for-beginners.git   # gitignored, stays local
+   git clone https://github.com/harishneel1/rag-for-beginners.git
    ```
+
+   The clone lands in `rag-for-beginners/`, which is gitignored, so it stays local.
 
 3. **OpenAI key:** the notebook calls `gpt-4o` and OpenAI embeddings. Put `OPENAI_API_KEY=sk-...` in `.env` at the repo root (set a spend limit first). `uv run python 00-setup/check_env.py` shows whether it's picked up.
 
