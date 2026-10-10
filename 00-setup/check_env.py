@@ -10,6 +10,7 @@ from shared.env import mask, missing_keys
 
 PACKAGES = ["numpy", "pandas", "matplotlib", "requests", "pytest", "jupyterlab"]
 KEYS_BY_PHASE = {
+    "RAG course": ["OPENAI_API_KEY"],
     "phase 4+": ["ANTHROPIC_API_KEY"],
     "phase 3+": ["HF_TOKEN"],
 }

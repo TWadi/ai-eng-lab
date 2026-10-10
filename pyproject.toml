@@ -22,6 +22,14 @@ dev = [
     "nbstripout>=0.7",
 ]
 # Install per phase with: uv sync --group <name>
+# RAG warm-up course notebooks (Harish Neel's rag-for-beginners, e.g. #12 multi-modal RAG)
+rag = [
+    "unstructured[pdf]>=0.18",
+    "langchain>=0.3",
+    "langchain-community>=0.3",
+    "langchain-openai>=0.3",
+    "langchain-chroma>=0.2",
+]
 ml = ["scikit-learn>=1.5", "seaborn>=0.13"]
 dl = ["torch>=2.4"]
 llm = ["anthropic>=0.40", "sentence-transformers>=3.0", "psycopg[binary]>=3.2", "pgvector>=0.3"]
