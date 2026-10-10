@@ -24,7 +24,7 @@ Playlist: https://www.youtube.com/playlist?list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_Vo
 
 ## Run the instructor's notebooks on localhost
 
-The course code is in [harishneel1/rag-for-beginners](https://github.com/harishneel1/rag-for-beginners). These steps open it in Jupyter at `http://localhost:8888`, like in the videos. They're written for #12 (multi-modal RAG).
+The course code is in [harishneel1/rag-for-beginners](https://github.com/harishneel1/rag-for-beginners). These steps run lecture #12's notebook (multi-modal RAG) in Jupyter at `http://localhost:8888`.
 
 1. **System tools** for PDF parsing and OCR (one time). Run only the lines for your OS.
 
@@ -58,7 +58,18 @@ The course code is in [harishneel1/rag-for-beginners](https://github.com/harishn
 
    The clone lands in `rag-for-beginners/`, which is gitignored, so it stays local.
 
-3. **OpenAI key:** the notebook calls `gpt-4o` and OpenAI embeddings. Put `OPENAI_API_KEY=sk-...` in `.env` at the repo root (set a spend limit first). `uv run python 00-setup/check_env.py` shows whether it's picked up.
+3. **Pick the models.** The instructor uses OpenAI (`gpt-4o` and OpenAI embeddings), which needs a paid key.
+
+   - **Free, on your own PC (Ollama):** install [Ollama](https://ollama.com/download) (Windows: `winget install --id Ollama.Ollama -e`), open a new terminal, then:
+
+     ```bash
+     ollama pull gemma3:4b
+     ollama pull nomic-embed-text
+     uv run python rag-course/use_ollama.py
+     ```
+
+     That writes `rag-for-beginners/8_multi_modal_rag_ollama.ipynb`, a copy of the notebook using `gemma3:4b` (it reads images) and `nomic-embed-text` (about 3.6 GB of downloads in total). Open that one in step 4. It's fast with an NVIDIA GPU, slower on CPU only. If you see `❌ AI summary failed` in the output, Ollama isn't running or a model is missing: the notebook keeps going with plain text instead of stopping.
+   - **OpenAI:** put `OPENAI_API_KEY=sk-...` in `.env` at the repo root (set a spend limit first). `uv run python 00-setup/check_env.py` shows whether it's picked up.
 
 4. **Start Jupyter:**
 
@@ -66,7 +77,7 @@ The course code is in [harishneel1/rag-for-beginners](https://github.com/harishn
    uv run --group rag jupyter lab
    ```
 
-   Your browser opens `http://localhost:8888/lab`. Open `rag-for-beginners/8_multi_modal_rag.ipynb` and run the cells top to bottom, **skipping the `%pip install` cell**: uv already installed everything, and the environment has no `pip`.
+   Your browser opens `http://localhost:8888/lab`. Open `rag-for-beginners/8_multi_modal_rag.ipynb` (or the `_ollama` copy) and run the cells top to bottom. In the instructor's original, **skip the `%pip install` cell**: uv already installed everything, and the environment has no `pip`. The Ollama copy has that cell disabled already.
 
 The first `hi_res` partition downloads a layout model from Hugging Face, so it takes a minute; later runs reuse it.
 

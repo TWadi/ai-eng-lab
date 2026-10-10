@@ -29,6 +29,7 @@ rag = [
     "langchain-community>=0.3",
     "langchain-openai>=0.3",
     "langchain-chroma>=0.2",
+    "langchain-ollama>=0.3",
 ]
 ml = ["scikit-learn>=1.5", "seaborn>=0.13"]
 dl = ["torch>=2.4"]
