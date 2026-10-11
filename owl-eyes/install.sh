@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Installs the Chouette owl eyes on this Raspberry Pi, then reboots into them.
+# Installs the Chouette owl eyes on this Raspberry Pi and starts them on its screen.
+# No admin password needed: without one, pygame goes into a private folder for this user.
 set -euo pipefail
 
 DIR="$HOME/owl-eyes"
@@ -262,12 +263,15 @@ def main():
     parser.add_argument("--no-sleep", action="store_true", help="stay awake at night")
     args = parser.parse_args()
 
+    os.environ.setdefault("SDL_VIDEO_MINIMIZE_ON_FOCUS_LOSS", "0")  # stay up when a pop-up takes focus
     pygame.mixer.pre_init(22050, -16, 1, 512)
     pygame.init()
     if args.window:
         screen = pygame.display.set_mode(tuple(int(v) for v in args.size.lower().split("x")))
     else:
         screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+        if pygame.display.get_driver() == "offscreen":  # SDL found no desktop and drew nowhere
+            raise SystemExit("No desktop found: the Pi must be showing its desktop for this user.")
         pygame.mouse.set_visible(False)
     pygame.display.set_caption("Chouette owl eyes (tap to poke, s = sleep, Esc = quit)")
 
@@ -340,22 +344,62 @@ with wave.open(sys.argv[1], "wb") as w:
 print("hoot seconds:", round(len(samples) / RATE, 2))
 MAKE_HOOT
 
-cat > "$HOME/.config/autostart/owl-eyes.desktop" <<'DESKTOP'
+ADMIN=no
+if sudo -n true 2>/dev/null; then ADMIN=yes; fi  # -n: never ask for a password
+
+PY=python3
+if python3 -c "import pygame" >/dev/null 2>&1; then
+    echo "pygame is already installed."
+elif [ "$ADMIN" = yes ]; then
+    echo "Installing pygame (takes a minute or two)..."
+    sudo apt-get update -qq
+    sudo apt-get install -y python3-pygame
+else
+    echo "Installing pygame just for $USER (no admin password needed, takes a few minutes)..."
+    if python3 -m venv "$DIR/venv" && "$DIR/venv/bin/pip" install --quiet --disable-pip-version-check pygame; then
+        PY="$DIR/venv/bin/python"
+    else
+        python3 -m pip install --user --break-system-packages --quiet pygame
+    fi
+fi
+
+echo "Starting it automatically with the desktop..."
+cat > "$HOME/.config/autostart/owl-eyes.desktop" <<DESKTOP
 [Desktop Entry]
 Type=Application
 Name=Chouette owl eyes
 Comment=Animated owl eyes on the owl's screen
-Exec=sh -c 'sleep 5; exec python3 "$HOME/owl-eyes/owl_eyes.py"'
+Exec=sh -c 'sleep 5; exec "$PY" "$DIR/owl_eyes.py"'
 X-GNOME-Autostart-enabled=true
 DESKTOP
 
-echo "Installing pygame (takes a minute or two)..."
-sudo apt-get update -qq
-sudo apt-get install -y python3-pygame
+if [ "$ADMIN" = yes ]; then
+    sudo raspi-config nonint do_blanking 1 || true  # keep the screen on (from the next restart)
+fi
 
-echo "Keeping the screen on..."
-sudo raspi-config nonint do_blanking 1
-
-echo "All done. The Pi restarts in 5 seconds; the owl eyes open once the desktop has loaded."
+echo "Opening the owl eyes on the Pi's screen..."
+# The running owl programs: python processes whose first argument is our owl_eyes.py.
+owl_pids() {
+    for pid in $(pgrep -f owl_eyes.py || true); do
+        if [ "$(tr '\0' '\n' < "/proc/$pid/cmdline" 2>/dev/null | sed -n 2p)" = "$DIR/owl_eyes.py" ]; then
+            echo "$pid"
+        fi
+    done
+}
+for pid in $(owl_pids); do kill "$pid" 2>/dev/null || true; done
+# An autostart that is still in its "sleep 5" would start a second copy: stop it too.
+pkill -u "$(id -u)" -f "sleep 5; exec .*$DIR/owl_eyes\.py" 2>/dev/null || true
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+WAYLAND_NAME="$(ls -1 "$XDG_RUNTIME_DIR" 2>/dev/null | grep -m1 -E '^wayland-[0-9]+$' || true)"
+if [ -n "$WAYLAND_NAME" ]; then export WAYLAND_DISPLAY="$WAYLAND_NAME"; fi
+export DISPLAY="${DISPLAY:-:0}"
+if [ -f "$HOME/.Xauthority" ]; then export XAUTHORITY="$HOME/.Xauthority"; fi
+setsid "$PY" "$DIR/owl_eyes.py" > "$DIR/owl-eyes.log" 2>&1 < /dev/null &
 sleep 5
-sudo reboot
+if [ -n "$(owl_pids)" ]; then
+    echo "All done: the owl eyes are open on the Pi's screen, and they start by themselves after every restart."
+else
+    echo "The eyes didn't open. Last lines of $DIR/owl-eyes.log:"
+    tail -n 15 "$DIR/owl-eyes.log"
+    exit 1
+fi
